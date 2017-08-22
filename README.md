@@ -135,3 +135,23 @@ for(t = 1; t <= 5; t++)
     }
 }
 ``` 
+
+### Player Sketch
+
+Let's build an MP3 player with the following features: PLAY, STOP, RESTART (restarts current song), NEXT and PREV. They will be assigned to the following triggers:
+
+* T1: RESTART
+* T2: NEXT
+* T3: PLAY and STOP
+* T4: PREV
+
+We'll build simple versions, incrementally adding the necessary features until the final version.
+
+#### 1.0 Version
+
+Initially, let's play every audio file inside the root directory, one after the other and looping to the beginning once all audio files have been played. We'll have to:
+
+* Determine when an audio file has finished playing
+* Read and play the next audio file
+* Determine when all audio files have been read and start all over again
+
