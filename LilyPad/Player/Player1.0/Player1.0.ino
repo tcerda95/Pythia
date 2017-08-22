@@ -9,12 +9,10 @@ const int SD_CS = 9;     // Chip Select for SD card
 char * validExtensions[] = {"MP3", "WAV", "MID", "MP4", "WMA", "FLA", "OGG", "AAC"};
 
 SFEMP3Shield MP3player;
-SdFile file;
 SdFat sd;
 
-void setup()
-{
-  int index;
+void setup() {
+  Serial.begin(9600);
   byte result;
 
   // The board uses a single I/O pin to select the
@@ -26,23 +24,15 @@ void setup()
 
   // Initialize the SD card; SS = pin 9, half speed at first
 
-  result = sd.begin(SD_CS, SPI_HALF_SPEED); // 1 for success
+  result = sd.begin(SD_CS, SPI_HALF_SPEED);
+
+  if (result != 1)
+    error(F("Failed to initialize SD card"));
   
-  if (result != 1) // Problem initializing the SD card
-  {
-    error(); // Halt forever
-  }
-  
-  // Start up the MP3 library
+  result = MP3player.begin();
 
-  result = MP3player.begin(); // 0 or 6 for success
-
-  // Check the result, see the library readme for error codes.
-
-  if ((result != 0) && (result != 6)) // Problem starting up
-  {
-    error(); // Halt forever
-  }
+  if ((result != 0) && (result != 6))
+    error(F("Failed to initialize MP3 PLayer"));
 
   sd.chdir("/",true);
 
@@ -54,43 +44,60 @@ void setup()
   digitalWrite(EN_GPIO1,HIGH);
   delay(2);
 
-  playNextTrack();
+  playNextTrack();  // Play first track
+
+  Serial.println(F("Setup done!"));
 }
 
 
-void loop()
-{
+void loop() {
   if (!MP3player.isPlaying()) {
+    delay(50);
     playNextTrack();
   }
 }
 
 void playNextTrack() {
-  char fileName[13];
-  
-  if (file.openNext(sd.vwd(), O_READ)) {
-    file.getFilename(fileName);
-    file.close();
-    
-    if (isValidAudioFile(fileName))
-      MP3player.playMP3(fileName);
-    else
-      playNextTrack();
+  char filename[13];
+
+  getNextFilename(filename);
+
+  while (!isValidAudioFile(filename)) {
+    Serial.println(F("Invalid audio file"));
+    getNextFilename(filename); 
   }
-  else {
-    sd.chdir("/",true);
-    playNextTrack();
-  }  
+
+  MP3player.playMP3(filename);
+  Serial.print(F("Playing: "));
+  Serial.println(filename);
 }
 
-boolean isValidAudioFile(const char * fileName) {
+void getNextFilename(char filename[]) {
+  SdFile file;
+
+  if (file.openNext(sd.vwd(), O_READ)) {
+    file.getFilename(filename);
+    file.close();
+
+    Serial.print(F("Read filename: %s\n"));
+    Serial.println(filename);
+  }
+  else {
+    Serial.println(F("Looping through all files again"));
+    sd.chdir("/", true);  // Reset iterator
+    getNextFilename(filename);
+  }
+}
+
+boolean isValidAudioFile(const char * filename) {
   int i;
+  int extensionsLength = (sizeof(validExtensions) / sizeof(validExtensions[0]));
   char *extension;
   
-  extension = strrchr(fileName, '.');
+  extension = strrchr(filename, '.');
   extension++;
 
-  for (i = 0; i < (sizeof(validExtensions) / sizeof(validExtensions[0])); i++) {
+  for (i = 0; i < extensionsLength; i++) {
     if (strcasecmp(extension, validExtensions[i]) == 0) {
       return true;
     }
@@ -99,8 +106,11 @@ boolean isValidAudioFile(const char * fileName) {
   return false;
 }
 
-void error()
-{
-  while(true) // Loop forever
-  ;
+void error(const __FlashStringHelper * cause) {
+  while(true) {
+    Serial.println(cause);
+    delay(2000);
+  }
 }
+
+

@@ -86,8 +86,7 @@ boolean interruptself = false;
 char filename[5][13];
 
 
-void setup()
-{
+void setup() {
   int x, index;
   SdFile file;
   byte result;
@@ -96,8 +95,7 @@ void setup()
   // Set the five trigger pins as inputs, and turn on the 
   // internal pullup resistors:
   
-  for (x = 0; x <= 4; x++)
-  {
+  for (x = 0; x <= 4; x++) {
     pinMode(trigger[x],INPUT);
     digitalWrite(trigger[x],HIGH);
   }
@@ -113,8 +111,8 @@ void setup()
 
   result = sd.begin(SD_CS, SPI_HALF_SPEED); // 1 for success
   
-  if (result != 1) // Problem initializing the SD card
-  {
+  // Problem initializing the SD card
+  if (result != 1) {
     error(); // Halt forever
   }
   
@@ -124,8 +122,8 @@ void setup()
 
   // Check the result, see the library readme for error codes.
 
-  if ((result != 0) && (result != 6)) // Problem starting up
-  {
+  // Problem starting up
+  if ((result != 0) && (result != 6)) {
     error(); // Halt forever
   }
 
@@ -134,16 +132,14 @@ void setup()
   // Start at the first file in root and step through all of them:
 
   sd.chdir("/",true);
-  while (file.openNext(sd.vwd(),O_READ))
-  {
+  while (file.openNext(sd.vwd(),O_READ)) {
     // Get filename and store it into tempfilename array
 
     file.getFilename(tempfilename);
 
     // Does the filename start with char '1' through '5'?      
 
-    if (tempfilename[0] >= '1' && tempfilename[0] <= '5')
-    {
+    if (tempfilename[0] >= '1' && tempfilename[0] <= '5') {
       // Yes! subtract char '1' to get an index of 0 through 4.
 
       index = tempfilename[0] - '1';
@@ -168,8 +164,7 @@ void setup()
 }
 
 
-void loop()
-{
+void loop() {
   int t;              // current trigger
   static int last_t;  // previous (playing) trigger
   int x;
@@ -182,21 +177,18 @@ void loop()
   // If serial debugging is on, only check triggers 1-3,
   // otherwise check triggers 1-5.
 
-  for(t = 1; t <= 5; t++)
-  {
+  for(t = 1; t <= 5; t++) {
     // The trigger pins are stored in the trigger[] array.
     // Read the pin and check if it is LOW (triggered).
 
-    if (digitalRead(trigger[t-1]) == LOW)
-    {
+    if (digitalRead(trigger[t-1]) == LOW) {
       // Wait for trigger to return high for a solid 50ms
       // (necessary to avoid switch bounce on T2 and T3
       // since we need those free for I2C control of the
       // amplifier)
       
       x = 0;
-      while(x < 50)
-      {
+      while(x < 50) {
         if (digitalRead(trigger[t-1]) == HIGH)
           x++;
         else
@@ -207,14 +199,12 @@ void loop()
       // Do we have a valid filename for this trigger?
       // (Invalid filenames will have 0 as the first character)
 
-      if (filename[t-1][0] != 0)
-      {
+      if (filename[t-1][0] != 0) {
         // If a file is already playing, and we've chosen to
         // allow playback to be interrupted by a new trigger,
         // stop the playback before playing the new file.
 
-        if (interrupt && MP3player.isPlaying() && ((t != last_t) || interruptself))
-        {
+        if (interrupt && MP3player.isPlaying() && ((t != last_t) || interruptself)) {
           MP3player.stopTrack();
         }
 
@@ -232,8 +222,7 @@ void loop()
 }
 
 
-void error()
-{
+void error() {
   while(true) // Loop forever
   ;
 }

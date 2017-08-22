@@ -16,7 +16,7 @@ It is strongly recommended to go through the official [LilyPad MP3 Player Gettin
 ### Prerequisites
 
 * [Arduino IDE installed](https://www.arduino.cc/en/Main/Software)
-* [The provided libraries inside the LilyPadMP3Player/libraries directory installed](https://www.arduino.cc/en/Guide/Libraries)
+* [The provided libraries inside LilyPad/libraries directory installed](https://www.arduino.cc/en/Guide/Libraries)
 * Understand C/C++/Arduino
 
 ### IDE Configuration
@@ -46,17 +46,16 @@ These values may be read with `digitalRead()` function and set with the `digital
 This sketch comes preinstalled with the LilyPad MP3 Player. This sketch will wait for one of the five trigger inputs to be grounded and will then play the corresponding audio file from the micro-SD card. The audio files should be placed under the root directory and renamed so the first character of each filename is the number "1" to "5", corresponding to the trigger that you want to play that file.
 [Here](https://learn.sparkfun.com/tutorials/getting-started-with-the-lilypad-mp3-player/supported-audio-formats) are the supported audio formats.
 
-The Sparkfun original source code is provided under the **TriggerDebug.ino** file and a version without the debug directives, in order to improve code readability, is provided under the **Trigger.ino** file. While the code is reasonably easy to understand on it's own, let's go through the essential parts which conform the basics of our LilyPad sketches. The **Trigger.ino** sketch will be analyzed.
+The Sparkfun original source code is provided under the [TriggerDebug.ino](LilyPad/TriggerDebug/TriggerDebug.ino) file and a version without the debug directives, in order to improve code readability, is provided under the [Trigger.ino](LilyPad/Trigger/Trigger.ino) file. While the code is reasonably easy to understand on it's own, let's go through the essential parts which conform the basics of our LilyPad sketches. The [Trigger.ino](LilyPad/Trigger/Trigger.ino) sketch will be analyzed.
 
 #### Code Explanation
 
-##### setup()
+#### setup()
 
 Since we are planning to *receive* information from each of the triggers they are set to `INPUT` mode. Additionally, since the trigger inputs will be grounded, meaning they will enter a `LOW` mode, we manually set them to `HIGH` mode in order to be able to detect *when* they are grounded. In other words, we can detect a change from `HIGH` to `LOW` state.
 
 ```C++
-for (x = 0; x <= 4; x++)
-{
+for (x = 0; x <= 4; x++) {
     pinMode(trigger[x],INPUT);
     digitalWrite(trigger[x],HIGH);
 }
@@ -83,12 +82,10 @@ sd.chdir("/",true);
 Iterate through the files and subdirectories of the volume working directory, previously set to "/". Note `sd.vwd()` corresponds to a `SdFat` instance representing the directory contaning the file to be opened. `O_READ` corresponds to the usual flags associated with file operations. If the file name corresponds to the defined format it is saved in an array. The filename is read as a 13 length string. Note that if multiple filenames correspond to the same number, the last one read will be the one stored into the buffer. Finally, the file is closed. Attempting to open an already open file results in an error.
 
 ```C++
-while (file.openNext(sd.vwd(),O_READ))
-{
+while (file.openNext(sd.vwd(),O_READ)) {
     file.getFilename(tempfilename);
 
-    if (tempfilename[0] >= '1' && tempfilename[0] <= '5')
-    {
+    if (tempfilename[0] >= '1' && tempfilename[0] <= '5') {
         index = tempfilename[0] - '1';
         strcpy(filename[index],tempfilename);  
     }
@@ -106,13 +103,10 @@ A while loop representing a 50 msec delay to avoid a switch bounce. Note that it
 Finally, if the interrupt or interrupt flags are set, the `MP3player` is stopped and played with the filename corresponding to the grounded trigger. We only need the name of the music file in order to play it.
 
 ```C++
-for(t = 1; t <= 5; t++)
-{
-    if (digitalRead(trigger[t-1]) == LOW)
-    {
+for(t = 1; t <= 5; t++) {
+    if (digitalRead(trigger[t-1]) == LOW) {
         x = 0;
-        while(x < 50)
-        {
+        while(x < 50) {
             if (digitalRead(trigger[t-1]) == HIGH)
                 x++;
             else
@@ -120,10 +114,8 @@ for(t = 1; t <= 5; t++)
             delay(1);
         } 
 
-        if (filename[t-1][0] != 0)
-        {
-            if (interrupt && MP3player.isPlaying() && ((t != last_t) || interruptself))
-            {
+        if (filename[t-1][0] != 0) {
+            if (interrupt && MP3player.isPlaying() && ((t != last_t) || interruptself)) {
                 MP3player.stopTrack();
             }
 
@@ -147,12 +139,65 @@ Let's build an MP3 player with the following features: PLAY, STOP, RESTART (rest
 
 We'll build simple versions, incrementally adding the necessary features until the final version.
 
-#### 1.0 Version
+### Version 1.0
 
 Initially, let's play every audio file inside the root directory, one after the other and looping to the beginning once all audio files have been played. We'll have to:
 
 * Determine when an audio file has finished playing
-* Read and play the next audio file
-* Determine if the file read is actually an audio file
-* Determine when all audio files have been read and start all over again
+* Read the next audio file
+* Loop all over again when all audio files in the directory have been read
+* Validate that the file read is actually an audio file
+* Play the audio file
 
+The source code may be found under [Player1.0.ino](LilyPad/Player/Player1.0/Player1.0.ino). I encourage you to read it on your own before reading the explanation, it's very easy to follow.
+
+#### Code Explanation
+
+Since there should always be music playing, the simplest way to determine if an audio file has finished playing is merely checking if the `MP3Player` is playing. If it is not playing, we delay 50 msec and play the next track.
+
+```C++
+if (!MP3player.isPlaying()) {
+    delay(50);
+    playNextTrack();
+}
+```
+
+In order to play the next track we first read the next filename in the root directory and store it into the `filename` `char` array. We must keep reading until we receive a valid audio file. Afterwards, we just play the file with the `MP3player.playMP3()` method.
+
+```C++
+void playNextTrack() {
+  char filename[13];
+
+  getNextFilename(filename);
+
+  while (!isValidAudioFile(filename)) {
+    getNextFilename(filename); 
+  }
+
+  MP3player.playMP3(filename);
+}
+```
+
+Finally, in order to read the next filename, we make use of `file.openNext()`, which iterates over the files given by `sd.vwd()`. If no files are left to be read, `file.openNext()` returns 0, so we reset the file iterator by setting the SD VWD to root again .
+
+```C++
+void getNextFilename(char filename[]) {
+  SdFile file;
+
+  if (file.openNext(sd.vwd(), O_READ)) {
+    file.getFilename(filename);
+    file.close();
+  }
+  else {
+    sd.chdir("/", true);  // Reset iterator
+    getNextFilename(filename);
+  }
+}
+```
+### Version 2.0
+
+#### Coming Soon!
+
+## Contact
+
+Tomás Cerdá - <tcerda@itba.edu.ar>
