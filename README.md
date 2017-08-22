@@ -153,5 +153,6 @@ Initially, let's play every audio file inside the root directory, one after the 
 
 * Determine when an audio file has finished playing
 * Read and play the next audio file
+* Determine if the file read is actually an audio file
 * Determine when all audio files have been read and start all over again
 
