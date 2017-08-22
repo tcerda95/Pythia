@@ -196,7 +196,11 @@ void getNextFilename(char filename[]) {
 ```
 ### Version 2.0
 
-#### Coming Soon!
+Let's add now the PLAY and STOP funcitonality. Recall we will assign both to T3. We'll have to:
+
+* Assign T3 as an `INPUT` pin (it will *receive* information) and set it to a `HIGH` state
+* Determine when T3 enters a `LOW` state and take an action
+* STOP the audio if it was playing; PLAY it otherwise
 
 ## Contact
 
