@@ -177,7 +177,7 @@ void loop() {
   // If serial debugging is on, only check triggers 1-3,
   // otherwise check triggers 1-5.
 
-  for(t = 1; t <= 5; t++) {
+  for (t = 1; t <= 5; t++) {
     // The trigger pins are stored in the trigger[] array.
     // Read the pin and check if it is LOW (triggered).
 
