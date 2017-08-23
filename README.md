@@ -206,14 +206,14 @@ The source code may be found under [Player2.0.ino](LilyPad/Player/Player2.0/Play
 
 #### Code Explanation
 
-First, inside the `setup()` function, we prepare the T3 trigger. Since we will be *receiving* information from the pin it must be set to `INPUT`. Additionally, we set it to a `HIGH` state in order to check for a `LOW` state when it is grounded. Note that we defined `const int T3 = A5` previously
+First, inside the `setup()` function, we prepare the T3 trigger. Since we will be *receiving* information from the pin it must be set to `INPUT`. Additionally, we set it to a `HIGH` state in order to check for a `LOW` state when it is grounded. Note that we previously defined `const int T3 = A5` as a global constant.
 
 ```C++
   pinMode(T3, INPUT);
   digitalWrite(T3, HIGH);
 ```
 
-To be able to determine whether an audio file is playing or not, we use a `playing` flag. We cannot make use of `MP3player.isPlaying()` for this purpose because we are already relying on it for automatically playing the next song on the list. Therefore, we change to following line:
+To be able to determine whether an audio file is playing or not, we make use of a `playing` flag. We cannot just check the value of `MP3player.isPlaying()` for this purpose because we are already relying on it for automatically playing the next song on the list. Therefore, we change the following line:
 
 ```C++
 if (!MP3player.isPlaying()) {
@@ -222,7 +222,7 @@ if (!MP3player.isPlaying()) {
 }
 ```
 
-to
+to:
 
 ```C++
 if (playing && !MP3player.isPlaying()) {
