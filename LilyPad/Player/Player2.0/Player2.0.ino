@@ -3,9 +3,11 @@
 #include <SdFat.h>          // SD card file system
 #include <SFEMP3Shield.h>   // MP3 decoder chip
 
-const int TRIG3 = A5;
+const int T3 = A5;
 const int EN_GPIO1 = A2; // Amp enable + MIDI/MP3 mode select
 const int SD_CS = 9;     // Chip Select for SD card
+
+const int WAIT_HIGH_MSECS = 50;
 
 char * validExtensions[] = {"MP3", "WAV", "MID", "MP4", "WMA", "FLA", "OGG", "AAC"};
 
@@ -17,8 +19,8 @@ void setup() {
   Serial.begin(9600);
   byte result;
 
-  pinMode(TRIG3, INPUT);
-  digitalWrite(TRIG3, HIGH);
+  pinMode(T3, INPUT);
+  digitalWrite(T3, HIGH);
 
   // The board uses a single I/O pin to select the
   // mode the MP3 chip will start up in (MP3 or MIDI),
@@ -50,7 +52,7 @@ void setup() {
   delay(2);
 
   playNextTrack();  // Play first track
-
+  delay(50);  // Wait a bit for track to start
   Serial.println(F("Setup done!"));
 }
 
@@ -62,8 +64,8 @@ void loop() {
     playNextTrack();
   }
 
-  if (digitalRead(TRIG3) == LOW) {
-    waitTriggerHigh(TRIG3);
+  if (digitalRead(T3) == LOW) {
+    waitTriggerHigh(T3);
     
     if (playing)
       stopTrack();
@@ -96,7 +98,7 @@ void getNextFilename(char filename[]) {
     file.getFilename(filename);
     file.close();
 
-    Serial.print(F("Read filename: %s\n"));
+    Serial.print(F("Read filename: "));
     Serial.println(filename);
   }
   else {
@@ -124,8 +126,13 @@ boolean isValidAudioFile(const char * filename) {
 }
 
 void waitTriggerHigh(int trigger) {
-  while(digitalRead(trigger) != HIGH)
-  ;
+  int elapsedMsecs = 0;
+
+  for (elapsedMsecs = 0; elapsedMsecs < WAIT_HIGH_MSECS; elapsedMsecs++) {
+    if (digitalRead(trigger) != HIGH)
+      elapsedMsecs = 0;
+    delay(1);
+  }
 }
 
 void stopTrack() {
@@ -146,5 +153,3 @@ void error(const __FlashStringHelper * cause) {
     delay(2000);
   }
 }
-
-

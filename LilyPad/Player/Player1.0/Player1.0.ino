@@ -79,7 +79,7 @@ void getNextFilename(char filename[]) {
     file.getFilename(filename);
     file.close();
 
-    Serial.print(F("Read filename: %s\n"));
+    Serial.print(F("Read filename: "));
     Serial.println(filename);
   }
   else {
