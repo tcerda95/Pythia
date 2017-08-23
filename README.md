@@ -43,7 +43,7 @@ These values may be read with `digitalRead()` function and set with the `digital
 
 ### Trigger Sketch
 
-This sketch comes preinstalled with the LilyPad MP3 Player. This sketch will wait for one of the five trigger inputs to be grounded and will then play the corresponding audio file from the micro-SD card. The audio files should be placed under the root directory and renamed so the first character of each filename is the number "1" to "5", corresponding to the trigger that you want to play that file.
+This sketch comes preinstalled with the LilyPad MP3 Player. It will wait for one of the five trigger inputs to be grounded and will then play the corresponding audio file from the micro-SD card. The audio files should be placed under the root directory and renamed so the first character of each filename is the number "1" to "5", corresponding to the trigger that you want to play that file.
 [Here](https://learn.sparkfun.com/tutorials/getting-started-with-the-lilypad-mp3-player/supported-audio-formats) are the supported audio formats.
 
 The Sparkfun original source code is provided under the [TriggerDebug.ino](LilyPad/TriggerDebug/TriggerDebug.ino) file and a version without the debug directives, in order to improve code readability, is provided under the [Trigger.ino](LilyPad/Trigger/Trigger.ino) file. While the code is reasonably easy to understand on it's own, let's go through the essential parts which conform the basics of our LilyPad sketches. The [Trigger.ino](LilyPad/Trigger/Trigger.ino) sketch will be analyzed.
@@ -200,7 +200,66 @@ Let's add now the PLAY and STOP funcitonality. Recall we will assign both to T3.
 
 * Assign T3 as an `INPUT` pin (it will *receive* information) and set it to a `HIGH` state
 * Determine when T3 enters a `LOW` state and take an action
-* STOP the audio if it was playing; PLAY it otherwise
+* STOP the audio if it was *playing*; PLAY it otherwise
+
+The source code may be found under [Player2.0.ino](LilyPad/Player/Player2.0/Player2.0.ino). As before, it is recommended to read it on your own before delving into the explanation.
+
+#### Code Explanation
+
+First, inside the `setup()` function, we prepare the T3 trigger. Since we will be *receiving* information from the pin it must be set to `INPUT`. Additionally, we set it to a `HIGH` state in order to check for a `LOW` state when it is grounded. Note that we defined `const int T3 = A5` previously
+
+```C++
+  pinMode(T3, INPUT);
+  digitalWrite(T3, HIGH);
+```
+
+To be able to determine whether an audio file is playing or not, we use a `playing` flag. We cannot make use of `MP3player.isPlaying()` for this purpose because we are already relying on it for automatically playing the next song on the list. Therefore, we change to following line:
+
+```C++
+if (!MP3player.isPlaying()) {
+    delay(50);
+    playNextTrack();
+}
+```
+
+to
+
+```C++
+if (playing && !MP3player.isPlaying()) {
+    delay(50);
+    playNextTrack();
+}
+```
+
+This way we prevent playing the next track if the player has been stopped, meaning `playing == false`.
+Finally, we take an action if T3 is in a `LOW` state: STOP the track if it was `playing` or PLAY it otherwise.
+
+```C++
+if (digitalRead(T3) == LOW) {
+  waitTriggerHigh(T3);
+  
+  if (playing)
+    stopTrack();
+  else
+    resumeTrack();
+}
+
+void stopTrack() {
+  playing = false;
+  MP3player.pauseMusic();
+}
+
+void resumeTrack() {
+  playing = true;
+  MP3player.resumeMusic();
+}
+```
+
+The last consideration is that the following line was added to `playNextTrack()`:
+
+```C++
+playing = true;
+```
 
 ## Contact
 
