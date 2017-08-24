@@ -261,6 +261,16 @@ The last consideration is that the following line was added to `playNextTrack()`
 playing = true;
 ```
 
+### Final Version
+
+For the final version, we have to implement the RESTART, NEXT and PREV functionality. For this we will have to:
+
+* Initialize the corresponding pins to `INPUT` and `HIGH` status
+* Replay the current audio file when RESTART trigger is grounded
+* Stop playing the current audio file when the PREV or NEXT trigger are grounded
+* Determine the previous audio file played when PREV is grounded and play it
+* Determine the next audio file when NEXT is grounded and play it
+
 ## Contact
 
 Tomás Cerdá - <tcerda@itba.edu.ar>
