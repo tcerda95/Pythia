@@ -271,6 +271,117 @@ For the final version, we have to implement the RESTART, NEXT and PREV functiona
 * Determine the previous audio file played when PREV is grounded and play it
 * Determine the next audio file when NEXT is grounded and play it
 
+The source code may be found under [Player.ino](LilyPad/Player/Player/Player.ino). This code is a bit more complex than the others but still manageable.
+
+#### Code Explanation
+
+First of all, with the objective in mind of avoiding an `if` "trigger grounded then do this and that" chain for each trigger, we define a `Trigger` struct with the corresponding pin number and a function pointer to the action to be taken when such trigger is grounded. This allows us to define an array with each `Trigger` and simplify the `loop()` function by just iterating and checking if each pin has been grounded and execute an action if that's the case.
+
+```C++
+typedef struct {
+    int trigger;
+    void (*executor) (void);
+} Trigger;
+
+const Trigger triggers[] = {
+                            {T1, &restartTrack}, 
+                            {T2, &playNextTrack},
+                            {T3, &toggleTrack}, 
+                            {T4, &playPrevTrack}
+                            };
+```
+
+and inside `loop()`:
+
+```C++
+int i;
+for (i = 0; i < TRIGGERS_SIZE; i++) {
+  if (digitalRead(triggers[i].trigger) == LOW) {
+    waitTriggerHigh(triggers[i].trigger);
+    triggers[i].executor();
+  }
+}  
+```
+
+The RESTART function makes use of `MP3player.skipTo()` which receives a msec skipping to that msec in the audio file. Beware that it automatically starts playing the audio file, so we check the value of the `playing` flag to determine if we should stop or not the music.
+
+```C++
+void restartTrack() {
+  MP3player.skipTo(0);
+  
+  if (!playing)
+    MP3player.pauseMusic();
+}
+```
+
+The NEXT function makes use of `playNextTrack()` which is the as in version 1.0. The only precaution to be taken of is that the micro-SD files cannot be iterated while the MP3player is playing, so it is necessary to stop it before reading the next filename. Similarly, the MP3player must be stopped before playing a new audio file.
+
+The PLAY and STOP functions were wrapped inside a `toggleTrack()` function which simply calls `stopTrack()` and `resumeTrack()` from version 2.0.
+
+```C++
+void toggleTrack() {
+  if (playing)
+    stopTrack();
+  else
+    resumeTrack();
+}
+```
+
+Finally, the PREV function iterates the micro-SD backwards until a valid audio file is found. Iterating backwards it's not as simple as iterating forward. We must read files, storing the last one read until find the current file being played. This way, the stored filename represents the previous audio file to the current one. After that we iterate once more until the previous filename is read in order to reset the iterator: the next call to `getNextFilename()` should return the current track.
+
+```C++
+void playPrevTrack() {
+  char prevFilename[MAX_FILENAME];
+  
+  getPrevFilename(prevFilename, currentTrack);
+  strcpy(currentTrack, prevFilename);
+
+  while (!isValidAudioFile(currentTrack)) {
+    getPrevFilename(prevFilename, currentTrack);
+    strcpy(currentTrack, prevFilename);
+  }
+
+  playTrack(currentTrack);
+}
+
+// Stores in prevFilename the previous file to currentFilename
+void getPrevFilename(char prevFilename[], const char * currentFilename) {
+  char loopFilename[MAX_FILENAME];
+
+  strcpy(prevFilename, currentFilename);
+  getNextFilename(loopFilename);
+
+  while (strcasecmp(loopFilename, currentFilename) != 0) {
+    strcpy(prevFilename, loopFilename);
+    getNextFilename(loopFilename);
+  }
+
+  // Place iterator such that next call to getNextFilename returns currentFilename  
+  while (strcasecmp(loopFilename, prevFilename) != 0)
+    getNextFilename(loopFilename);
+}
+```
+
+Notice that to be able to iterate backwards we need to know the name of the current track being played, so we define a `currentTrack` global and set it after every call to `playPrevTrack()` and `playNextTrack()`, as well as setting `playing = true`, stop the MP3player and wait until the MP3player is actually playing after a call to `MP3player.playMP3()`. To do this without repeating code between this two functions we define:
+
+```C++
+void playTrack(const char * trackName) {
+  if (MP3player.isPlaying())
+    MP3player.stopTrack();
+  
+  MP3player.playMP3(trackName);
+  while (!MP3player.isPlaying()) // Wait until it starts playing
+  ;
+  playing = true;
+  strcpy(currentTrack, trackName);
+}
+```
+
+#### Final notes
+
+* The filenames retrieved by the SD library are in the [8.3 format (short filename)](https://en.wikipedia.org/wiki/8.3_filename), which maximum length is of 12 plus the null character.
+* Avoid using the T4 trigger when debugging. Since it is shared by the TX (transmitter) serial line, every write to the Serial will ground the T4 trigger. It is recommended to replace T4 for T5 in this case. While T5 is shared by the RX (receiver) serial line, information is never received from the Serial in this Sketch, so it shouldn't cause any trouble.
+
 ## Contact
 
 Tomás Cerdá - <tcerda@itba.edu.ar>
