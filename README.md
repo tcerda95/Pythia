@@ -389,7 +389,7 @@ A very simple but interesting addition to our already functional [Player Sketch]
 * Set T5, the only trigger left, as `OUTPUT` mode since it will be *sending* information
 * Write `HIGH` to T5 if music is playing, write `LOW` otherwise
 
-Remember that `HIGH` means a value of 3.3V and `LOW` means 0V. This numbers are important in order to calculate the resistance needed for the LED. The source code may be found under [PlayerLED.ino](LilyPad/Player/Player/PlayerLED.ino) and it's pretty straightforward. The most important concepts to gather are the ones regarding building a [circuit](https://learn.sparkfun.com/tutorials/what-is-a-circuit), [Ohm's Law](https://learn.sparkfun.com/tutorials/voltage-current-resistance-and-ohms-law) and the use of a [breadboard](https://learn.sparkfun.com/tutorials/how-to-use-a-breadboard).
+Remember that `HIGH` means a value of 3.3V and `LOW` means 0V. This numbers are important in order to calculate the resistance needed for the LED. The source code may be found under [PlayerLED.ino](LilyPad/Player/PlayerLED/PlayerLED.ino) and it's pretty straightforward. The most important concepts to gather are the ones regarding building a [circuit](https://learn.sparkfun.com/tutorials/what-is-a-circuit), [Ohm's Law](https://learn.sparkfun.com/tutorials/voltage-current-resistance-and-ohms-law), [resistance calculation](https://learn.sparkfun.com/tutorials/resistors/example-applications) and the use of a [breadboard](https://learn.sparkfun.com/tutorials/how-to-use-a-breadboard).
 
 #### Code Explanation
 
@@ -407,6 +407,16 @@ if (playing)
 else
     digitalWrite(T5, LOW);
 ```
+
+#### Board Schematic
+
+Inside the [PlayerLED directory](LilyPad/Player/PlayerLED) you may find a breadboard schematic which may be edited with the [Fritzing](http://fritzing.org/home/) open source software. Currently there is no part for the Lilypad MP3 Player so I used the Lilypad Arduino USB part and left notes where T5 and GND would be in the Lilypad MP3 Player.
+
+![Player LED breadboad schematic](LilyPad/Player/PlayerLED/PlayerLEDSketch.png)
+
+This would represent the following circuit:
+
+![Player LED circuit](LilyPad/Player/PlayerLED/PlayerLEDCircuit.png)
 
 ## Contact
 
