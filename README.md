@@ -382,6 +382,32 @@ void playTrack(const char * trackName) {
 * The filenames retrieved by the SD library are in the [8.3 format (short filename)](https://en.wikipedia.org/wiki/8.3_filename), which maximum length is of 12 plus the null character.
 * Avoid using the T4 trigger when debugging. Since it is shared by the TX (transmitter) serial line, every write to the Serial will ground the T4 trigger. It is recommended to replace T4 for T5 in this case. While T5 is shared by the RX (receiver) serial line, information is never received from the Serial in this Sketch, so it shouldn't cause any trouble.
 
+### Enhancing the Player Sketch with LED
+
+A very simple but interesting addition to our already functional [Player Sketch](LilyPad/Player/Player/Player.ino) is to add a LED which is turned on as long as there is music playing. This means that grounding the STOP trigger (T2) would turn off or on the LED depending on if it was playing or not respectively. We need to:
+
+* Set T5, the only trigger left, as `OUTPUT` mode since it will be *sending* information
+* Write `HIGH` to T5 if music is playing, write `LOW` otherwise
+
+Remember that `HIGH` means a value of 3.3V and `LOW` means 0V. This numbers are important in order to calculate the resistance needed for the LED. The source code may be found under [PlayerLED.ino](LilyPad/Player/Player/PlayerLED.ino) and it's pretty straightforward. The most important concepts to gather are the ones regarding building a [circuit](https://learn.sparkfun.com/tutorials/what-is-a-circuit), [Ohm's Law](https://learn.sparkfun.com/tutorials/voltage-current-resistance-and-ohms-law) and the use of a [breadboard](https://learn.sparkfun.com/tutorials/how-to-use-a-breadboard).
+
+#### Code Explanation
+
+Inside `setup()` T5 is set to `OUTPUT` mode. It will *send* information and act as the *positive* side of the source of electricity.
+
+```C++
+pinMode(T5, OUTPUT);
+```
+
+Inside `loop()` we write `HIGH` or `LOW` to T5 depending on the value of the `playing` flag:
+
+```C++
+if (playing)
+    digitalWrite(T5, HIGH);
+else
+    digitalWrite(T5, LOW);
+```
+
 ## Contact
 
 Tomás Cerdá - <tcerda@itba.edu.ar>
