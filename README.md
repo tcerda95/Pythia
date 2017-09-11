@@ -546,7 +546,7 @@ void loop() {
 
 #### Board Schematic
 
-**Coming Soon!**
+![Proximity breadboad schematic](ArduinoUNO/Proximity/ProximitySketch.png)
 
 ## Contact
 
