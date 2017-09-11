@@ -435,7 +435,7 @@ Let's focus now towards the development of sensors in order for Pythia to verify
 
 ### Mastering the Ultrasonic Sensor HC-SR04
 
-Operating with the HC-SR04 sensor is a simple task. Nonetheless, we will be using the [NewPing](http://playground.arduino.cc/Code/NewPing) library for working with it, abstracting us from the [necessary calculations and pulses](http://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/) and providing already tested, robust solutions.
+Operating with the HC-SR04 sensor is a simple task. Nonetheless, we will be using the [NewPing](http://playground.arduino.cc/Code/NewPing) library for working with it, abstracting us from the [necessary calculations and pulses](http://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/) and providing already tested, robust solutions. Secondly, we'll take advantage of the [elapsedMillis](https://playground.arduino.cc/Code/ElapsedMillis) library for managing any kind of logic regarding some kind of time elapsed as we'll see shortly.
 
 ### Proximity Sketch
 
