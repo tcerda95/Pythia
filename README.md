@@ -6,6 +6,8 @@ Named after the Oracles of Delphi, Pythia is a testbed with the objetive of test
 
 * [LilyPad MP3 Player](https://www.sparkfun.com/products/11013)
 * [Raspberry Pi](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
+* [Arduino UNO](https://store.arduino.cc/usa/arduino-uno-rev3)
+* [Ultrasonic Sensor - HC-SR04](https://www.sparkfun.com/products/13959)
 
 ## Getting to know the LilyPad MP3 Player
 
@@ -417,6 +419,42 @@ Inside the [PlayerLED directory](LilyPad/Player/PlayerLED) you may find a breadb
 This would represent the following circuit:
 
 ![Player LED circuit](LilyPad/Player/PlayerLED/PlayerLEDCircuit.png)
+
+## Managing Sensors with Arduino UNO
+
+Let's focus now towards the development of sensors in order for Pythia to verify if someone is effectively in front of her and therefore engage in a conversation. Keep in mind we have to check when:
+
+* Someone is at certain distance near of Pythia
+* Someone actually leaves the proximity of Pythia
+* Someone is only passing by in front of Pythia but continues his/her way. Pythia gotta ignore those.
+
+### IDE Configuration
+
+* **Board:** Arduino/Genuino UNO *(Tools > Board)*
+* **Port:** select the port that your FTDI board or cable is using. This is usually the highest number; you can be sure if you unplug the FTDI and the number disappears *(Tools > Port)*
+
+### Mastering the Ultrasonic Sensor HC-SR04
+
+Operating with the HC-SR04 sensor is a simple task. Nonetheless, we will be using the [NewPing](http://playground.arduino.cc/Code/NewPing) library for working with it, abstracting us from the [necessary calculations and pulses](http://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/) and providing already tested, robust solutions.
+
+### Proximity Sketch
+
+Let's light up some LEDs as proximity signals in order to accomplish the 3 conditions earlier described. We'll use RED, YELLOW and GREEN LEDs which will signal:
+
+* **RED**: No one near
+* **YELLOW**: Someone is near but might only be passing by
+* **GREEN**: Someone has been near long enough (2 seconds) such that is definitely not only passing by
+
+We'll be considering that 100 cm or lower means someone is near and that 2 seconds near is long enough. For this we will have to:
+
+* Setup the LED pins as OUTPUT
+* Setup the HC-SR04 sensor such that it only records 100 cm or lower distances
+* Light RED if no distance is recorded. Keep in mind only distances below 100 cm get recorded
+* Light YELLOW if a distance gets recorded
+* Keep recording for 2 seconds
+* Light RED if record lost before 2 seconds
+* Light GREEN if record alive after 2 seconds
+
 
 ## Contact
 
