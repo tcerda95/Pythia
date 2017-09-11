@@ -443,18 +443,104 @@ Let's light up some LEDs as proximity signals in order to accomplish the 3 condi
 
 * **RED**: No one near
 * **YELLOW**: Someone is near but might only be passing by
-* **GREEN**: Someone has been near long enough (2 seconds) such that is definitely not only passing by
+* **GREEN**: Someone has been near long enough (1.5 seconds) such that is definitely not only passing by
 
-We'll be considering that 100 cm or lower means someone is near and that 2 seconds near is long enough. For this we will have to:
+We'll be considering that 125 cm or lower means someone is near and that 1.5 seconds near is long enough. For this we will have to:
 
 * Setup the LED pins as OUTPUT
-* Setup the HC-SR04 sensor such that it only records 100 cm or lower distances
+* Setup the HC-SR04 sensor such that it only records 125 cm or lower distances
 * Light RED if no distance is recorded. Keep in mind only distances below 100 cm get recorded
 * Light YELLOW if a distance gets recorded
-* Keep recording for 2 seconds
-* Light RED if record lost before 2 seconds
-* Light GREEN if record alive after 2 seconds
+* Keep recording for 1.5 seconds
+* Light RED if record lost before 1.5 seconds
+* Light GREEN if record alive after 1.5 seconds
 
+The source code may be found under [Proximity.ino](ArduinoUNO/Proximity/Proximity.ino). While most of it's logic relies on function pointers, the code is pretty easy to understand and therefore it is suggested to go through it on your own before delving into the explanation.
+
+#### Code Explanation
+
+The general idea is the implementation of a [state machine](http://codeandlife.com/2013/10/06/tutorial-state-machines-with-c-callbacks/) with the use of the `Proximity` struct which contains the corresponding LED to the proximity level and the callback (function pointer) to be executed in such state which also returns the new corresponding state (may be the same one). The callback receives the distance measured as argument.
+
+```C++
+typedef struct proximity {
+  int led;
+  struct proximity (*callback) (int);
+} Proximity;
+```
+
+The corresponding proximity levels are the following:
+
+```C++
+const Proximity noOneNear = {
+  RED,
+  noOneNearCallback
+};
+
+const Proximity mayBeNear = {
+  YELLOW,
+  mayBeNearCallback
+};
+
+const Proximity isNear = {
+  GREEN,
+  isNearCallback
+};
+```
+
+And the callbacks are pretty simple. They just transition from one state to another depending on the value of the distance recorded. In the case of the `noOneNear` to the `mayBeNear` transition the timer `someoneNearTime` from the *elapsedMillis* library is resetted.
+
+```C++
+Proximity noOneNearCallback(int distance) {
+  if (distance) {
+    someoneNearTime = 0;
+    return mayBeNear;
+  }
+  else {
+    return noOneNear;
+  }
+}
+
+Proximity mayBeNearCallback(int distance) {
+  if (distance && hasBeenNearEnough())
+    return isNear;
+  else if (distance)
+    return mayBeNear;
+  else
+    return noOneNear;
+}
+
+Proximity isNearCallback(int distance) {
+  if (distance)
+    return isNear;
+  else
+    return noOneNear;
+}
+
+boolean hasBeenNearEnough() {
+  return someoneNearTime > NEAR_ENOUGH_MILLIS;
+}
+```
+
+Outcome of this modular scheme is that the main `loop` function is as simple as follows, avoiding cluttering code with heavy conditional IF logic or a switch/case scenario:
+
+```C++
+void loop() {
+  int distance = sensor.ping_cm();
+  int prevLed = proximity.led;
+  proximity = proximity.callback(distance);
+
+  if (prevLed != proximity.led) {
+    digitalWrite(prevLed, LOW);
+    digitalWrite(proximity.led, HIGH);
+  }
+  
+  delay(100);
+}
+```
+
+#### Board Schematic
+
+**Coming Soon!**
 
 ## Contact
 
