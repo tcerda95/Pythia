@@ -43,6 +43,12 @@ The pins are the primary source of I/O communication for our board. In the case 
 
 These values may be read with `digitalRead()` function and set with the `digitalWrite()` function. We could, for example, set a trigger to an initial value of `HIGH` with `digitalWrite()` and check with `digitalRead()` if the value has changed to `LOW` and act accordingly.
 
+#### Serial
+
+[Serial](https://www.arduino.cc/en/Reference/Serial) is used for communication between the Arduino board and a computer or other devices. It is used to transmit and read bytes through USB. It communicates on the RX and TX pins, where RX is where information is *received* and TX where it is *transmitted*.
+
+The Serial may be used for debugging purposes as well as transferring information picked up by sensors to another device which would consume such information in another more sophisticated manner. It's primary methods are `Serial.println()`, `Serial.print()` and `Serial.read()`. It must be initialized with `Serial.begin()` which receives the datarate in bits per seconds (baud). Usually 9600 bauds.
+
 ### Trigger Sketch
 
 This sketch comes preinstalled with the LilyPad MP3 Player. It will wait for one of the five trigger inputs to be grounded and will then play the corresponding audio file from the micro-SD card. The audio files should be placed under the root directory and renamed so the first character of each filename is the number "1" to "5", corresponding to the trigger that you want to play that file.
