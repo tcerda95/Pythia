@@ -544,6 +544,14 @@ void loop() {
 }
 ```
 
+One last consideration regarding the use of the NewPing library. The sensor is initialized as follows:
+
+```C++
+NewPing sensor(TRIGGER, ECHO, MAX_DISTANCE);
+```
+
+where TRIGGER and ECHO correspond to the trigger and echo pins of the sensor respectively; and MAX_DISTANCE represents the maximum ping distance in centimeters the sensor would read. Any reading above such distance simply return 0. That's why we can work with `if (distance)` statements. 
+
 #### Board Schematic
 
 ![Proximity breadboad schematic](ArduinoUNO/Proximity/ProximitySketch.png)

@@ -5,7 +5,7 @@ const int YELLOW = 9;
 const int GREEN = 10;
 const int RED = 11;
 const int MAX_DISTANCE = 125; // in centimeters
-const int NEAR_ENOUGH_MILLIS = 1500; // Two seconds
+const int NEAR_ENOUGH_MILLIS = 1500; // One and a half seconds
 const int TRIGGER = 3;
 const int ECHO = 7;
 
