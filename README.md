@@ -8,6 +8,7 @@ Named after the Oracles of Delphi, Pythia is a testbed with the objetive of test
 * [Raspberry Pi](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
 * [Arduino UNO](https://store.arduino.cc/usa/arduino-uno-rev3)
 * [Ultrasonic Sensor - HC-SR04](https://www.sparkfun.com/products/13959)
+* [KY-038 Microphone sound sensor module](http://sensorkit.en.joy-it.net/index.php?title=KY-038_Microphone_sound_sensor_module)
 
 ## Getting to know the LilyPad MP3 Player
 
@@ -434,6 +435,11 @@ Let's focus now towards the development of sensors in order for Pythia to verify
 * Someone actually leaves the proximity of Pythia
 * Someone is only passing by in front of Pythia but continues his/her way. Pythia gotta ignore those.
 
+Once conversation has been engaged, it is necessary to determine when someone is talking to Pythia and has effectively finished to do so. This means that we have to check when:
+
+* Someone is talking to Pythia
+* Someone has finished talking to Pythia
+
 ### IDE Configuration
 
 * **Board:** Arduino/Genuino UNO *(Tools > Board)*
@@ -550,11 +556,122 @@ One last consideration regarding the use of the NewPing library. The sensor is i
 NewPing sensor(TRIGGER, ECHO, MAX_DISTANCE);
 ```
 
-where TRIGGER and ECHO correspond to the trigger and echo pins of the sensor respectively; and MAX_DISTANCE represents the maximum ping distance in centimeters the sensor would read. Any reading above such distance simply return 0. That's why we can work with `if (distance)` statements. 
+where `TRIGGER` and `ECHO` correspond to the trigger and echo pins of the sensor respectively; and `MAX_DISTANCE` represents the maximum ping distance in centimeters the sensor would read. Any reading above such distance simply return 0. That's why we can work with `if (distance)` statements. 
 
 #### Board Schematic
 
 ![Proximity breadboad schematic](ArduinoUNO/Proximity/ProximitySketch.png)
+
+
+### Mastering the KY-038 Microphone sound sensor module
+
+Now that Pythia has got a pair of eyes she'll need some ears. For this we'll use the KY-038 Microphone sound sensor module digital output pin which returns `HIGH` if sound has been sensed and `LOW` otherwise. Our objective is that Pythia must be able to determine whether someone is talking to her or not. 
+
+This is not an easy task. When we talk to someone we are not constantly emitting sound: we make pauses between words and phrases; we think about what to say next. The person listening to us *infers from the context* of what we are saying whether we have finished talking or not. Currently, Pythia does not have this capability; she may only determine if sound is being emitted or not. 
+
+Therefore, we'll take the following criteria: if sound has been emitted, then someone is talking to Pythia. If no sound has been emitted for some time below a certain threshold then someone is still talking to Pythia. This threshold would represent our pauses natural in a conversation. Finally, if no sound has been emitted for some time above the threshold, then no one is talking to Pythia.
+
+### TalkingSensor Library
+
+Let's write our own library for this behaviour. All our `TalkingSensor` class will need to expose is a `isTalking()` method. A step by step guide for writing aa Arduino library may be found [here](https://www.arduino.cc/en/Hacking/LibraryTutorial). For implementing the library we'll have to:
+
+* Write a header (.h) file where the `TalkingSensor` class is defined
+* Implement it in a .cpp file
+* Define a constructor which receives the pin from which the sound information may be recovered
+* Read from the input pin if sound has been emitted when `isTalking()` is invoked
+* Reset the sound counter if sound has been emitted
+* Return `true` if counter is below threshold, `false` otherwise
+
+The complete library may be found under [TalkingSensor](ArduinoUNO/libraries/TalkingSensor).
+
+#### Library Code
+
+We define the class with it's methods and private variables in the header file [TalkingSensor.h](ArduinoUNO/libraries/TalkingSensor/TalkingSensor.h):
+
+```C++
+/* 
+ * TalkingSensor.h - Library for checking is someone is talking.
+ * Released into the public domain
+ */
+
+#ifndef _talkingSensor_h_
+#define _talkingSensor_h_
+
+#include "Arduino.h"
+#include <elapsedMillis.h>
+
+#define DEFAULT_THRESHOLD 2000
+
+class TalkingSensor {
+  public:
+    TalkingSensor(int digitalPin, int talkingThreshold = DEFAULT_THRESHOLD);
+    bool isTalking();
+  private:
+    int _pin;
+    int _talkingThreshold;
+    elapsedMillis _timeSinceLastSound;
+};
+
+#endif
+```
+
+Note that we make use of the `elapsedMillis` library, therefore it is included in our header file. We implement it in [TalkingSensor.cpp](ArduinoUNO/libraries/TalkingSensor/TalkingSensor.cpp):
+
+```C++
+#include "TalkingSensor.h"
+
+TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
+  pinMode(digitalPin, INPUT);
+  _pin = digitalPin;
+  _talkingThreshold = talkingThreshold;
+  _timeSinceLastSound = 0;
+}
+
+/*
+ * Returns true if someone is talking, false otherwise.
+ * The talking threshold time must be surprassed with
+ * no sound in order to return false.
+ */
+bool TalkingSensor::isTalking() {
+  int sound = digitalRead(_pin);
+
+  if (sound == HIGH)
+      _timeSinceLastSound = 0;
+
+  return _timeSinceLastSound <= _talkingThreshold;
+}
+```
+
+The code is self-explanatory, with a strong correspondence with the step-by-step earlier described.
+
+Finally, an example of use is presented under [TalkingSensorExample.ino](ArduinoUNO/libraries/TalkingSensor/examples/TalkingSensorExample/TalkingSensorExample.ino):
+
+```C++
+#include <TalkingSensor.h>
+
+const int LED = 10 ;
+const int DIGITAL_PIN = 13;
+
+TalkingSensor talkingSensor(DIGITAL_PIN);  // Build sensor with default talkingThreshold
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+  if (talkingSensor.isTalking()) {
+    digitalWrite(LED, HIGH);
+    Serial.println(F("someone is talking"));
+  }
+  else {
+    digitalWrite(LED, LOW);
+    Serial.println(F("silence"));
+  }
+}
+```
+
+
 
 ## Contact
 
