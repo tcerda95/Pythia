@@ -620,6 +620,9 @@ Note that we make use of the `elapsedMillis` library, therefore it is included i
 ```C++
 #include "TalkingSensor.h"
 
+/* How many times the pin would be read for sound signals */
+#define LISTEN_TRIES 20
+
 TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
   pinMode(digitalPin, INPUT);
   _pin = digitalPin;
@@ -633,16 +636,21 @@ TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
  * no sound in order to return false.
  */
 bool TalkingSensor::isTalking() {
-  int sound = digitalRead(_pin);
+  int sound;
 
-  if (sound == HIGH)
-      _timeSinceLastSound = 0;
+  for (int i = 0; i < LISTEN_TRIES; i++) {
+      sound = digitalRead(_pin);
+      if (sound == HIGH)
+        _timeSinceLastSound = 0;
+      delay(1);
+  }
 
   return _timeSinceLastSound <= _talkingThreshold;
 }
+
 ```
 
-The code is self-explanatory, with a strong correspondence with the step-by-step earlier described.
+The code pretty much corresponds with the step-by-step earlier described. Note that we read the pin several times in order to extend the listen time window.
 
 Finally, an example of use is presented under [TalkingSensorExample.ino](ArduinoUNO/libraries/TalkingSensor/examples/TalkingSensorExample/TalkingSensorExample.ino):
 
