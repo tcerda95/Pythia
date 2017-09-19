@@ -445,9 +445,9 @@ Once conversation has been engaged, it is necessary to determine when someone is
 * **Board:** Arduino/Genuino UNO *(Tools > Board)*
 * **Port:** select the port that your FTDI board or cable is using. This is usually the highest number; you can be sure if you unplug the FTDI and the number disappears *(Tools > Port)*
 
-### Mastering the Ultrasonic Sensor HC-SR04
+### A Sight to See
 
-Operating with the HC-SR04 sensor is a simple task. Nonetheless, we will be using the [NewPing](http://playground.arduino.cc/Code/NewPing) library for working with it, abstracting us from the [necessary calculations and pulses](http://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/) and providing already tested, robust solutions. Secondly, we'll take advantage of the [elapsedMillis](https://playground.arduino.cc/Code/ElapsedMillis) library for managing any kind of logic regarding some kind of time elapsed as we'll see shortly.
+Let's develop some eyes for Pythia with the Ultrasonic Sensor HC-SR04 sensor. Operating with the HC-SR04 sensor is a simple task. Nonetheless, we will be using the [NewPing](http://playground.arduino.cc/Code/NewPing) library for working with it, abstracting us from the [necessary calculations and pulses](http://howtomechatronics.com/tutorials/arduino/ultrasonic-sensor-hc-sr04/) and providing already tested, robust solutions. Secondly, we'll take advantage of the [elapsedMillis](https://playground.arduino.cc/Code/ElapsedMillis) library for managing any kind of logic regarding some kind of time elapsed as we'll see shortly.
 
 ### Proximity Sketch
 
@@ -563,7 +563,7 @@ where `TRIGGER` and `ECHO` correspond to the trigger and echo pins of the sensor
 ![Proximity breadboad schematic](ArduinoUNO/Proximity/ProximitySketch.png)
 
 
-### Mastering the KY-038 Microphone sound sensor module
+### Developing Hearing
 
 Now that Pythia has got a pair of eyes she'll need some ears. For this we'll use the KY-038 Microphone sound sensor module digital output pin which returns `HIGH` if sound has been sensed and `LOW` otherwise. Our objective is that Pythia must be able to determine whether someone is talking to her or not. 
 
@@ -679,7 +679,72 @@ void loop() {
 }
 ```
 
+### Sight and Hearing combined
 
+We have developed sight and hearing senses for Pythia. It's time to bring those together! It's a relatively simple task. All we have to do is write to the `Serial` the most recent **change** of state; meaning when Pythia senses something **new**. The breakthrough about this is that we can now transmit pre-processed information about Pythia surroundings which can be picked up through the `Serial` by any other device, such as a computer.
+
+The code may be found under [SightAndHearing.ino](ArduinoUNO/SightAndHearing/SightAndHearing.ino). As expected, is very similar to the last two codes we have seen.
+
+### Code Explanation
+
+Only the `setup()` and `loop()` functions are presented; the rest of the code is very similar to [Proximity.ino](ArduinoUNO/Proximity/Proximity.ino):
+
+```C++
+Proximity proximity;
+bool isSomeoneTalking;
+
+void setup() {
+  int i;
+  Serial.begin(9600);
+
+  for (i = 0; i < nLeds; i++) {
+    pinMode(leds[i], OUTPUT);
+    digitalWrite(leds[i], LOW);
+  }
+
+  proximity = noOneNear;
+  digitalWrite(proximity.led, HIGH);
+  Serial.println(proximity.stateName);
+
+  isSomeoneTalking = false;
+  delay(TALK_THRESHOLD);
+}
+
+void loop() {
+  int distance = sensor.convert_cm(sensor.ping_median(PINGS));
+  int prevLed = proximity.led;
+  bool prevTalking = isSomeoneTalking;
+  
+  proximity = proximity.callback(distance);
+  isSomeoneTalking = talkingSensor.isTalking();
+
+  if (prevLed != proximity.led) {
+    Serial.println(proximity.stateName);
+    digitalWrite(prevLed, LOW);
+    digitalWrite(proximity.led, HIGH);
+  }
+
+  if (prevTalking != isSomeoneTalking && isSomeoneTalking)
+    Serial.println("talking");
+  else if (prevTalking != isSomeoneTalking && !isSomeoneTalking)
+    Serial.println("silence");  
+}
+```
+
+The most important thing to notice is the logic inside `loop()` for writing to the `Serial` a **change** of state. Therefore, a `bool isSomeoneTalking` variable is used to keep record of whether someone was already talking or not. More precisely, the following lines:
+
+```C++
+bool prevTalking = isSomeoneTalking;
+...
+isSomeoneTalking = talkingSensor.isTalking();
+...
+if (prevTalking != isSomeoneTalking && isSomeoneTalking)
+  Serial.println("talking");
+else if (prevTalking != isSomeoneTalking && !isSomeoneTalking)
+  Serial.println("silence");  
+```
+
+Having developed sight and hearing, Pythia has everything she needs to consume the surroundings information in intelligent manners! Only a brain would suffice...
 
 ## Contact
 
