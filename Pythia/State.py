@@ -1,7 +1,7 @@
 from pygame import mixer
 from random import shuffle
-from Detection import Detection
-from DetectionError import DetectionError
+from Trigger import Trigger
+from TriggerError import TriggerError
 import os
 import random
 
@@ -27,14 +27,14 @@ class IdleState(PythiaState):
 
         return self
 
-    def next(self, detection, surroundings):
-        if detection == Detection.mayBeNear:
+    def next(self, trigger, worldState):
+        if trigger == Trigger.mayBeNear:
             return PythiaState.lowVolume
 
-        elif detection == Detection.isNear:
-            raise DetectionError(self, detection, PythiaState.lowVolume)
+        elif trigger == Trigger.isNear:
+            raise TriggerError(self, trigger, PythiaState.lowVolume)
 
-        elif detection == Detection.endTransmit:
+        elif trigger == Trigger.endTransmit:
             self.run()
             return self
 
@@ -51,17 +51,17 @@ class LowVolumeState(PythiaState):
         mixer.music.set_volume(0.3)
         return self
 
-    def next(self, detection, surroundings):
-        if detection == Detection.noOneNear:
+    def next(self, trigger, worldState):
+        if trigger == Trigger.noOneNear:
             mixer.music.set_volume(1)
             return PythiaState.idle
 
-        elif detection == Detection.isNear:
+        elif trigger == Trigger.isNear:
             mixer.music.set_volume(1)
             return PythiaState.engage
 
-        elif detection == Detection.mayBeNear:
-            raise DetectionError(self, detection, PythiaState.idle)
+        elif trigger == Trigger.mayBeNear:
+            raise TriggerError(self, trigger, PythiaState.idle)
 
         else:
             return self
@@ -81,18 +81,18 @@ class EngageState(PythiaState):
         mixer.music.play()
         return self
 
-    def next(self, detection, surroundings):
-        if detection == Detection.endTransmit and surroundings.sound == Detection.talking:
+    def next(self, trigger, worldState):
+        if trigger == Trigger.endTransmit and worldState.sound == Trigger.talking:
             return PythiaState.listen
 
-        elif detection == Detection.endTransmit and surroundings.sound == Detection.silence:
+        elif trigger == Trigger.endTransmit and worldState.sound == Trigger.silence:
             return PythiaState.waitAnswer
 
-        elif detection == Detection.noOneNear:  # TODO: disappointed speech when person leaves during pythia presentation
+        elif trigger == Trigger.noOneNear:  # TODO: disappointed speech when person leaves during pythia presentation
             return PythiaState.idle
 
-        elif detection == Detection.mayBeNear or detection == Detection.isNear:
-            raise DetectionError(self, detection, PythiaState.idle)
+        elif trigger == Trigger.mayBeNear or trigger == Trigger.isNear:
+            raise TriggerError(self, trigger, PythiaState.idle)
 
         else:
             return self
@@ -106,21 +106,21 @@ class WaitAnswerState(PythiaState):
     def run(self):
         return self
 
-    def next(self, detection, surroundings):
-        if detection == Detection.nothing:  # timeout: repeating presentation
+    def next(self, trigger, worldState):
+        if trigger == Trigger.nothing:  # timeout: repeating presentation
             return PythiaState.engage
 
-        elif detection == Detection.noOneNear: # TODO: disappointed speech when person leaves without answering
+        elif trigger == Trigger.noOneNear: # TODO: disappointed speech when person leaves without answering
             return PythiaState.idle
 
-        elif detection == Detection.talking:
+        elif trigger == Trigger.talking:
             return PythiaState.listen
 
-        elif detection == Detection.mayBeNear or detection == Detection.isNear:
-            raise DetectionError(self, detection, PythiaState.idle)
+        elif trigger == Trigger.mayBeNear or trigger == Trigger.isNear:
+            raise TriggerError(self, trigger, PythiaState.idle)
 
-        elif detection == Detection.silence:
-            raise DetectionError(self, detection, PythiaState.listen)
+        elif trigger == Trigger.silence:
+            raise TriggerError(self, trigger, PythiaState.listen)
 
         else:
             return self
@@ -134,18 +134,18 @@ class ListenState(PythiaState):
     def run(self):
         return self
 
-    def next(self, detection, surroundings):  
-        if detection == Detection.noOneNear: # TODO: disappointed speech when person leaves without answering
+    def next(self, trigger, worldState):  
+        if trigger == Trigger.noOneNear: # TODO: disappointed speech when person leaves without answering
             return PythiaState.idle
 
-        elif detection == Detection.silence:
+        elif trigger == Trigger.silence:
             return PythiaState.aphorism
 
-        elif detection == Detection.talking:
-            raise DetectionError(self, detection, PythiaState.aphorism)
+        elif trigger == Trigger.talking:
+            raise TriggerError(self, trigger, PythiaState.aphorism)
 
-        elif detection == Detection.mayBeNear or detection == Detection.isNear:
-            raise DetectionError(self, detection, PythiaState.idle)
+        elif trigger == Trigger.mayBeNear or trigger == Trigger.isNear:
+            raise TriggerError(self, trigger, PythiaState.idle)
 
         else:
             return self
@@ -165,15 +165,15 @@ class AphorismState(PythiaState):
         mixer.music.play()
         return self
 
-    def next(self, detection, surroundings):
-        if detection == Detection.noOneNear:
+    def next(self, trigger, worldState):
+        if trigger == Trigger.noOneNear:
             return PythiaState.idle
 
-        elif detection == Detection.endTransmit:
+        elif trigger == Trigger.endTransmit:
             return PythiaState.engage
 
-        elif detection == Detection.mayBeNear or detection == Detection.isNear:
-            raise DetectionError(self, detection, PythiaState.idle)
+        elif trigger == Trigger.mayBeNear or trigger == Trigger.isNear:
+            raise TriggerError(self, trigger, PythiaState.idle)
 
         else:
             return self

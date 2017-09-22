@@ -2,9 +2,9 @@ import os
 import serial
 import random
 import time
-from Detection import Detection
+from Trigger import Trigger
 from State import PythiaState
-from Surroundings import Surroundings
+from WorldState import WorldState
 import pygame
 from pygame import mixer
 
@@ -20,14 +20,14 @@ ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout=1)  # 1 sec timeout
 
 state = PythiaState.idle
 state.run()
-surroundings = Surroundings()
+worldState = WorldState()
 timeoutCount = 0
 
 
-def consumeDetection(state, detection, surroundings):
-    surroundings.update(detection)
+def consumeTrigger(state, trigger, worldState):
+    worldState.update(trigger)
     prevState = state
-    state = state.next(detection, surroundings)
+    state = state.next(trigger, worldState)
 
     if prevState is not state:
         timeoutCount = 0
@@ -39,18 +39,18 @@ def consumeDetection(state, detection, surroundings):
 while True:
     print state
     sense = ser.readline().strip()
-    detection = Detection.fromString(sense)
+    trigger = Trigger.fromString(sense)
 
-    if detection is Detection.nothing:
+    if trigger is Trigger.nothing:
         timeoutCount += 1
 
         if timeoutCount == MAX_TIMEOUTS:
             timeoutCount = 0
-            state = consumeDetection(state, detection, surroundings)
+            state = consumeTrigger(state, trigger, worldState)
 
     else:
-        state = consumeDetection(state, detection, surroundings)
+        state = consumeTrigger(state, trigger, worldState)
 
     for event in pygame.event.get():
         if event.type == SONG_END:
-            state = consumeDetection(state, Detection.endTransmit, surroundings)
+            state = consumeTrigger(state, Trigger.endTransmit, worldState)
