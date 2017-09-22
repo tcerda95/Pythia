@@ -18,6 +18,9 @@ class Trigger:
     def __cmp__(self, other):
         return cmp(self.trigger, other.trigger)
 
+    def __eq__(self, other):
+        return self.trigger == other.trigger
+
     def __hash__(self):
         return hash(self.trigger)
 
