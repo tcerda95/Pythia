@@ -3,9 +3,9 @@ class TriggerError(Exception):
     """Raised when a trigger is illegal in current state.
 
     Attributes:
-        state -- state which received illegal trigger
-        trigger -- the illegal trigger
-        shouldBeState  -- state in which it should have gone before illegal trigger
+        state (str): state which received illegal trigger
+        trigger (Trigger): the illegal trigger
+        shouldBeState (str): state in which it should have gone before illegal trigger
     """
 
     def __init__(self, state, trigger, shouldBeState):

@@ -1,5 +1,4 @@
 import context
-import Condition
 import unittest
 from MachineState import MachineState
 from WorldState import WorldState
@@ -12,8 +11,10 @@ class TestMachineState(unittest.TestCase):
         self.machineState = MachineState('initialState')
         self.worldState = WorldState()
         self.actionRun = False
+        self.timesRan = 0
 
-    def action(self):
+    def action(self, worldState):
+        self.timesRan += 1
         self.actionRun = True
 
     def testInit(self):
@@ -32,29 +33,34 @@ class TestMachineState(unittest.TestCase):
     def testTransition(self):
         self.machineState.addTransition('initialState', 'secondState', Trigger.mayBeNear, self.action)
 
-        self.machineState.run(Trigger.isNear, self.worldState) # not registered trigger
+        self.machineState.run(Trigger.isNear, self.worldState)  # not registered trigger
 
         self.assertEqual('initialState', self.machineState.state)
         self.assertFalse(self.actionRun)
         self.assertEqual(Trigger.isNear, self.worldState.proximity)
 
-        self.machineState.run(Trigger.mayBeNear, self.worldState) # registered trigger
+        self.machineState.run(Trigger.mayBeNear, self.worldState)  # registered trigger
 
         self.assertEqual('secondState', self.machineState.state)
         self.assertTrue(self.actionRun)
+        self.assertEqual(self.timesRan, 1)
         self.assertEqual(Trigger.mayBeNear, self.worldState.proximity)
 
     def testTransitionWithCondition(self):
         self.machineState.addTransition('initialState', 'secondState', Trigger.talking, self.action)
-        self.machineState.addTransition('secondState', 'thirdState', Trigger.mayBeNear, self.action, 
-            allCondition([soundCondition(Trigger.talking), proximityCondition(Trigger.mayBeNear)]))
-        
+
+        self.machineState.addTransition('secondState', 'badState', Trigger.mayBeNear, self.action, proximityCondition(Trigger.isNear))
+        self.machineState.addTransition('secondState', 'thirdState', Trigger.mayBeNear, self.action,
+                                        allCondition([soundCondition(Trigger.talking), proximityCondition(Trigger.mayBeNear)]))
+        self.machineState.addTransition('secondState', 'anotherBadState', Trigger.mayBeNear, self.action, proximityCondition(Trigger.isNear))
+
         self.machineState.run(Trigger.talking, self.worldState)
         self.actionRun = False
         self.machineState.run(Trigger.mayBeNear, self.worldState)
 
         self.assertEqual('thirdState', self.machineState.state)
         self.assertTrue(self.actionRun)
+        self.assertEqual(self.timesRan, 2)
 
 
 if __name__ == '__main__':

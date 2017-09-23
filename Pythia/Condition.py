@@ -1,29 +1,38 @@
 
 def trueCondition(worldState):
-	return True
+    """Condition that is always true"""
+    return True
+
 
 def anyCondition(conditions):
-	def anyConditionFunction(worldState):
-		for c in conditions:
-			if c(worldState):
-				return True
-		return False
-	return anyConditionFunction
+    """Given a list of conditions it returns a condition which is true when any of the given conditions are true"""
+    def anyConditionFunction(worldState):
+        for c in conditions:
+            if c(worldState):
+                return True
+        return False
+    return anyConditionFunction
+
 
 def allCondition(conditions):
-	def allConditionFunction(worldState):
-		for c in conditions:
-			if not c(worldState):
-				return False
-		return True
-	return allConditionFunction
+    """Given a list of conditions it returns a condition which is true when all of the given conditions are true"""
+    def allConditionFunction(worldState):
+        for c in conditions:
+            if not c(worldState):
+                return False
+        return True
+    return allConditionFunction
+
 
 def soundCondition(soundState):
-	def soundConditionFunction(worldState):
-		return worldState.sound == soundState
-	return soundConditionFunction
+    """Given a sound state it returns a condition which is true when the world state sound is like the given sound state"""
+    def soundConditionFunction(worldState):
+        return worldState.sound == soundState
+    return soundConditionFunction
+
 
 def proximityCondition(proximityState):
-	def proximityCondictionFunction(worldState):
-		return worldState.proximity == proximityState
-	return proximityCondictionFunction
+    """Given a sound state it returns a condition which is true when the world state sound is like the given sound state"""
+    def proximityCondictionFunction(worldState):
+        return worldState.proximity == proximityState
+    return proximityCondictionFunction

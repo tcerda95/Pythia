@@ -1,11 +1,10 @@
 
 class TriggerCategory:
-    pass
+    proximity = 'proximity'
+    sound = 'sound'
+    heartbeat = 'nothing'
+    pythiaBehaviour = 'Pythia behaviour'
 
-TriggerCategory.proximity = 'proximity'
-TriggerCategory.sound = 'sound'
-TriggerCategory.nothing = 'nothing'
-TriggerCategory.pythiaBehaviour = 'Pythia behaviour'
 
 class Trigger:
     def __init__(self, trigger, category):
@@ -24,13 +23,14 @@ class Trigger:
     def __hash__(self):
         return hash(self.trigger)
 
+
 Trigger.isNear = Trigger('isNear', TriggerCategory.proximity)
 Trigger.mayBeNear = Trigger('mayBeNear', TriggerCategory.proximity)
 Trigger.noOneNear = Trigger('noOneNear', TriggerCategory.proximity)
 Trigger.talking = Trigger('talking', TriggerCategory.sound)
 Trigger.silence = Trigger('silence', TriggerCategory.sound)
-Trigger.endTransmit = Trigger('endTransmit', TriggerCategory.pythiaBehaviour) # Pythia stopped transmition, e.g. talking or making music
-Trigger.nothing = Trigger('', TriggerCategory.nothing) # nothing detected; useful on timeouts
+Trigger.endTransmit = Trigger('endTransmit', TriggerCategory.pythiaBehaviour)  # Pythia stopped transmition, e.g. talking or making music
+Trigger.heartbeat = Trigger('', TriggerCategory.heartbeat)  # nothing detected; useful on timeouts
 
 triggerDictionary = {
     'isNear': Trigger.isNear,
@@ -39,9 +39,11 @@ triggerDictionary = {
     'talking': Trigger.talking,
     'silence': Trigger.silence,
     'endTransmit': Trigger.endTransmit,
-    '': Trigger.nothing
+    '': Trigger.heartbeat
 }
 
+
 def __triggerFromString__(cls, string): return triggerDictionary[string]
+
 
 Trigger.fromString = classmethod(__triggerFromString__)
