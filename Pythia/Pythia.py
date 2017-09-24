@@ -1,6 +1,7 @@
 import serial
 import random
 import pygame
+import os
 from pygame import mixer
 from Trigger import Trigger
 from WorldState import WorldState
@@ -17,11 +18,19 @@ mixer.init()
 mixer.music.set_endevent(SONG_END)
 
 
+def soundFiles(directory):
+    names = []
+    for filename in os.listdir(directory):
+        if '.mp3'in filename or '.wav' in filename:
+            names.append(directory + '/' + filename)
+    print names
+    return names
+
 machineState = MachineState('alone')
 
-engageSpeech = Action.playEngageSpeech(['music/canon.mp3'])
-randomMusic = Action.playRandomMusic(['music/allegro.mp3'])
-playAphorism = Action.playAphorism(['music/seasons.mp3'])
+engageSpeech = Action.playEngageSpeech(soundFiles('engageSpeeches'))
+randomMusic = Action.playRandomMusic(soundFiles('music'))
+playAphorism = Action.playAphorism(soundFiles('aphorisms'))
 
 machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.lowerVolume)
 machineState.addTransition('alone', 'alone', Trigger.endTransmit, randomMusic)
