@@ -28,9 +28,10 @@ def soundFiles(directory):
 
 machineState = MachineState('alone')
 
-engageSpeech = Action.playEngageSpeech(soundFiles('engageSpeeches'))
+engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeeches'))
+repeatEngage = Action.playRandomSpeech(soundFiles('repeatEngage'))
+playAphorism = Action.playRandomSpeech(soundFiles('aphorisms'))
 randomMusic = Action.playRandomMusic(soundFiles('music'))
-playAphorism = Action.playAphorism(soundFiles('aphorisms'))
 
 machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.lowerVolume)
 machineState.addTransition('alone', 'alone', Trigger.endTransmit, randomMusic)
@@ -43,7 +44,7 @@ machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, Action.d
 machineState.addTransition('engage', 'listen', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.talking))
 
 machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, randomMusic)   # TODO: disappointed speech
-machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, engageSpeech)
+machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, repeatEngage)
 machineState.addTransition('waitAnswer', 'listen', Trigger.talking, Action.doNothing)
 
 machineState.addTransition('listen', 'alone', Trigger.noOneNear, randomMusic)  # TODO: disappointed speech

@@ -32,21 +32,12 @@ def higherVolume(worldState):
     mixer.music.set_volume(1)
 
 
-def playEngageSpeech(speeches):
-    def playEngageSpeechFunction(worldState):
+def playRandomSpeech(speeches):
+    def playSpeechFunction(worldState):
         select = random.randint(0, len(speeches) - 1)
         mixer.music.load(speeches[select])
         mixer.music.play()
-    return playEngageSpeechFunction
-
-
-def playAphorism(aphorisms):
-    def playAphorismFunction(worldState):
-        select = random.randint(0, len(aphorisms) - 1)
-        mixer.music.load(aphorisms[select])
-        mixer.music.play()
-    return playAphorismFunction
-
+    return playSpeechFunction
 
 def doNothing(worldState):
     pass
