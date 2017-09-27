@@ -11,7 +11,8 @@ import Condition
 
 
 SONG_END = pygame.USEREVENT + 1
-MAX_TIMEOUTS = 5
+MAX_TIMEOUTS = 1
+REPEAT_SPEECH_HEARTBEATS = 5  # repeats the engage speech after 5 heartbeats of waiting an answer
 
 pygame.init()
 mixer.init()
@@ -44,7 +45,7 @@ machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, Action.d
 machineState.addTransition('engage', 'listen', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.talking))
 
 machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, randomMusic)   # TODO: disappointed speech
-machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, repeatEngage)
+machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, repeatEngage, Condition.heartbeatCountCondition(REPEAT_SPEECH_HEARTBEATS))
 machineState.addTransition('waitAnswer', 'listen', Trigger.talking, Action.doNothing)
 
 machineState.addTransition('listen', 'alone', Trigger.noOneNear, randomMusic)  # TODO: disappointed speech
@@ -55,7 +56,6 @@ machineState.addTransition('aphorism', 'notAlone', Trigger.endTransmit, engageSp
 machineState.addTransition('aphorism', 'engage', Trigger.endTransmit, engageSpeech, Condition.proximityCondition(Trigger.isNear))
 
 
-timeoutCount = 0
 worldState = WorldState()
 ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout=1)  # 1 sec timeout
 
@@ -66,17 +66,8 @@ while True:
     sense = ser.readline().strip()
     trigger = Trigger.fromString(sense)
 
-    if trigger is Trigger.heartbeat:
-        timeoutCount += 1
-
-        if timeoutCount == MAX_TIMEOUTS:
-            timeoutCount = 0
-            machineState.run(trigger, worldState)
-    else:
-        timeoutCount = 0
-        machineState.run(trigger, worldState)
+    machineState.run(trigger, worldState)
 
     for event in pygame.event.get():
         if event.type == SONG_END:
-            timeoutCount = 0
             machineState.run(Trigger.endTransmit, worldState)

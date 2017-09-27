@@ -36,3 +36,10 @@ def proximityCondition(proximityState):
     def proximityCondictionFunction(worldState):
         return worldState.proximity == proximityState
     return proximityCondictionFunction
+
+
+def heartbeatCountCondition(count):
+    """Given a heartbeat count it returns a condition which is true when the number of successive heartbeats is as given"""
+    def heartbeatCountConditionFunction(worldState):
+        return worldState.heartbeatCount == count
+    return heartbeatCountConditionFunction
