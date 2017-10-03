@@ -6,30 +6,30 @@ import time
 from pygame import mixer
 
 mixer.init()
-ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout = 5) # 5 secs timeout
-aforismos = []
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout = 5) # 5 secs timeout
+songs = []
 
 for filename in os.listdir('./music'):
     if '.mp3' in filename:
-        aforismos.append('music/' + filename)
+        songs.append('music/' + filename)
 
-print aforismos
+print songs
 
-mixer.music.load(aforismos[0])
+mixer.music.load(songs[0])
 mixer.music.play()
 
 while True:
     state = ser.readline().strip()
     select = -1
 
-#    if 'mayBeNear' in state:
-#        mixer.music.set_volume(0.2)
-
     if 'isNear' in state:
-        select = random.randint(0, len(aforismos)-1)
+        select = random.randint(0, len(songs)-1)
 
-#    elif 'noOneNear' in state:
-#        mixer.music.set_volume(1)
+        print 'playing: ', songs[select]
+
+        mixer.music.load(songs[select])
+        mixer.music.set_volume(1)
+        mixer.music.play()
 
     elif 'talking' in state:
         mixer.music.set_volume(0.2)
@@ -38,16 +38,4 @@ while True:
         mixer.music.set_volume(1)
 
     print state
-
-    if not mixer.music.get_busy:
-        select = random.randint(0, len(aforismos) - 1)
-
-    if select != -1:
-        print 'playing: ', aforismos[select]
-
-        mixer.music.load(aforismos[select])
-        mixer.music.set_volume(1)
-        mixer.music.play()
-
-print aforismos
 

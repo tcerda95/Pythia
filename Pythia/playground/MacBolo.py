@@ -6,29 +6,24 @@ import time
 from pygame import mixer
 
 mixer.init()
-aforismos = []
+songs = []
 
 for filename in os.listdir('./music'):
     if ".mp3" in filename:
-        aforismos.append('music/' + filename)
+        songs.append('music/' + filename)
 
-print aforismos
+print songs
 
-try:
-    while True:
-        time.sleep(5)
+while True:
+    time.sleep(5)
 
-        select = random.randint(0,len(aforismos)-1)
+    select = random.randint(0,len(songs)-1)
 
-        print 'playing: ', aforismos[select]
+    print 'playing: ', songs[select]
 
-        mixer.music.load(aforismos[select])
-        mixer.music.play()
-except:
-    pass
-finally:
-    pass
+    mixer.music.load(songs[select])
+    mixer.music.play()
 
 
-print aforismos
+print songs
 

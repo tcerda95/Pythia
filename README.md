@@ -679,7 +679,7 @@ void loop() {
 }
 ```
 
-### Sight and Hearing combined
+### Sight and Hearing Combined
 
 We have developed sight and hearing senses for Pythia. It's time to bring those together! It's a relatively simple task. All we have to do is write to the `Serial` the most recent **change** of state; meaning when Pythia senses something **new**. The breakthrough about this is that we can now transmit pre-processed information about Pythia surroundings which can be picked up through the `Serial` by any other device, such as a computer.
 
@@ -744,7 +744,77 @@ else if (prevTalking != isSomeoneTalking && !isSomeoneTalking)
   Serial.println("silence");  
 ```
 
-Having developed sight and hearing, Pythia has everything she needs to consume the surroundings information in intelligent manners! Only a brain would suffice...
+Having developed sight and hearing, Pythia has everything she needs to process the surroundings information in intelligent manners! Only a brain and a voice would suffice...
+
+## Raspberry PI
+
+A Raspberry PI is a [single-board computer](https://en.wikipedia.org/wiki/Single-board_computer), capable of processing the information picked up by the Arduino sensors. It can run [Python](https://en.wikipedia.org/wiki/Python_(programming_language)) scripts which is ideal since it has multiple libraries that adjust to our needs such as [pyserial](https://pythonhosted.org/pyserial/) for communicating with the Arduino and [pygame](https://www.pygame.org/news) for reproducing sound and music files.
+
+Let's go through a simple script which demonstrates these concepts before outlining the details of our main goal of Pythia engaging in a conversation and giving a random answer. 
+
+Note we'll be using [Python 2.7](https://www.python.org/download/releases/2.7/) throughout our scripts.
+
+### Proximity Script
+
+This script processes the signals read by the Arduino through the USB serial and plays a random music if someone *is near* Pythia. Additionally, it reduces the volume when someone *may be near*. Therefore we'll have to:
+
+* Load the songs
+* Play some song initially
+* Read the Serial
+* Execute an action depending on the readings:
+  * **isNear**: Set max volume and play a random song from the loaded songs
+  * **mayBeNear**: Lower the volume
+  * **noOneNear**: Set max volume
+
+Notice that the readings correspond to the same strings printed to the Serial in the last Arduino sketch. The code may be found under [Proximity.py](Pythia/playground/Proximity.py). As always, it is strongly recommended to read it first and then go through the following explanation.
+
+### Code Explanation
+
+First of all we setup the [mixer](https://www.pygame.org/docs/ref/mixer.html), an object from the `pygame` library capable of reproducing song and sounds. Afterwards, the `Serial` is initialized with the corresponding serial port (usually */dev/ttyACM0*) and the baud rate, which must be the same as the Arduino serial. We could've specificied a timeout, otherwise the `serial.readline()` blocks until a newline is read. For this script a timeout won't be needed. A short introduction to the serial setup and uses may be found [here](https://pythonhosted.org/pyserial/shortintro.html).
+
+Finally, the songs are loaded from the music directory with the help of the [os](https://docs.python.org/2/library/os.html) module.
+
+```Python
+mixer.init()
+ser = serial.Serial('/dev/ttyACM0', 9600)
+songs = []
+
+for filename in os.listdir('./music'):
+    if '.mp3' in filename:
+        songs.append('music/' + filename)
+```
+
+Afterwards, the first song is loaded to the `mixer` and played.
+
+```Python
+mixer.music.load(songs[0])
+mixer.music.play()
+```
+
+Finally, the main loop reads what is sent from the Arduino serial with `ser.readline()` and executes an action depending on it's value. Keep in mind that `mixer.music.load()` **stops** the current song that is playing and it is not played until a call to `mixer.music.play()` is done. More about it [here](https://www.pygame.org/docs/ref/music.html).
+
+```Python
+while True:
+    state = ser.readline()
+
+    if 'isNear' in state:
+        select = random.randint(0, len(songs)-1)
+
+        print 'playing: ', songs[select]
+        mixer.music.load(songs[select])
+        mixer.music.set_volume(1)
+        mixer.music.play()
+
+    elif 'mayBeNear' in state:
+        mixer.music.set_volume(0.2)
+
+    elif 'noOneNear' in state:
+        mixer.music.set_volume(1)
+
+    print state
+```
+
+As you may have been, it is very simple to communicate with the Arduino board through a Raspberry PI Python script. Another very similar example which processes the sounds may be found under [SoundProximity.py](Pythia/playground/SoundProximity.py). There should be no trouble understanding it.
 
 ## Contact
 
