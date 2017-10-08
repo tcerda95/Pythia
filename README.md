@@ -816,6 +816,146 @@ while True:
 
 As you may have been, it is very simple to communicate with the Arduino board through a Raspberry PI Python script. Another very similar example which processes the sounds may be found under [SoundProximity.py](Pythia/playground/SoundProximity.py). There should be no trouble understanding it.
 
+## Goal
+
+Currently, the goal is that Pythia should recognize that someone is *near* her and *engage* in a conversation with that someone. This conversation would consist of the following flow:
+
+* Pythia says an *opening speech*, inviting the other person to a conversation
+* Pythia *waits* and *listens* for an answer
+* When the answer is given, Pythia responds with an *aphorism*
+
+When Pythia is *alone* she may reproduce random music and when she believes someone *may be near* she can lower the volume or try to catch the other person attention by whistling or some other mechanism.
+
+Note that implementing this flow is not as simple as it looks. Unexpected things may happen and Pythia should know how to react to them. 
+
+Let's represent this scheme with state transitions. We can build a **Machine State** object which receives a **Trigger** and the **World State**, *transitioning* from one *source* state to another *destination* state while executing a given **Action**, considering that a given **Condition** about the **World State** is met. Phew, those sure look like too many concepts for a single sentence. Let's take a closer look.
+
+### Transition
+
+A **Transition** represents going from one state to another. It is defined by a *source* and *destination* states, a **Trigger** which provokes the transition, an **Action** to perform and the **Condition** about the **World State** which must be met in order to perform the **Transition**.
+
+### World State
+
+The **World State** holds values which represent the *relevant* and *current* details about the world. For example, this values may be about the *proximity* and the *sound* of the surroundings, as well as how many consecutive heartbeats have passed. A heartbeat is a trigger that represents that nothing has happened for some while.
+
+The **World State** is *updated* by triggers and actions. A condition should not alter the **World State**.
+
+### Trigger
+
+A **Trigger** is any kind of influence from the World which may provoke a transition from one state to another. Someone coming near Pythia, someone talking to Pythia, someone stopped talking, Pythia stopped talking or no other trigger nothing happened for some time (*heartbeat*) are all examples of triggers. 
+
+It's not estrictly necessary, but we can categorize triggers. Someone coming near would be a *proximity* trigger and someone talking would be a *sound* trigger.
+
+### Action
+
+An **Action** is something Pythia may do when performing certain transition. Therefore, every transition has an action associated. Note that with this definition, it is not the destination state which defines the action to perform, but the transition.
+
+For example, the transition **B -> A** and **C -> A** may perform two completely different actions, although the destination state (A) is the same. Even the transitions **B -> A** may perform different actions if they have different triggers or conditions associated.
+
+### Condition
+
+A **Condition** is a proposition regarding the World State which must be evaluated to **true** in order to perform the transition which the **Condition** is associated to. 
+
+For example, when Pythia finishes her engage speech, she must whether: wait for an answer to start or actually listen depending of the World State sound value.
+
+### Machine State implementation
+
+The implementation of the Machine State is very simple. Basically, it holds the current state and it consists of a map with a tuple composed by the source state and the trigger as key, and a **list** of tuples composed by the destination state, the action and the condition as value. 
+
+In other "words": `(fromState, trigger) -> [a1, a2, ..., an]`, where `aj = (toState, action, condition)`. The other considerable detail is that it updates the World State accordingly by the given Trigger.
+
+It consists of the methods `addTransition(fromState, toState, trigger, action, condition)`  and `run(trigger, worldState)` and the constructor receives the initial state. The code is fully commented and may be found under [MachineState.py](Pythia/MachineState.py).
+
+### Pythia States
+
+Such simple implementation of the Machine State allows us to write flexible and readable transitions quickly. 
+
+The setup consists of configuring the serial to communicate with the Arduino, configuring the pygame mp3 player and adding the transitions to the Machine State.
+
+The main loop of the program consists of:
+
+* Reading inputs from the Arduino serial
+* Tanslating them to triggers
+* Feeding the triggers to the Machine State
+* Check if Pythia ended a transimition, building the `endTransmit` trigger therefore.
+
+The code may be found under [Pythia.py](Pythia/Pythia.py) and the important details are as following:
+
+```Python
+machineState = MachineState('alone')
+
+engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeeches'))
+repeatEngage = Action.playRandomSpeech(soundFiles('repeatEngage'))
+playAphorism = Action.playRandomSpeech(soundFiles('aphorisms'))
+randomMusic = Action.playRandomMusic(soundFiles('music'))
+
+machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.lowerVolume)
+machineState.addTransition('alone', 'alone', Trigger.endTransmit, randomMusic)
+
+machineState.addTransition('notAlone', 'alone', Trigger.noOneNear, Action.higherVolume)
+machineState.addTransition('notAlone', 'engage', Trigger.isNear, Action.chain([Action.higherVolume, engageSpeech]))
+
+machineState.addTransition('engage', 'alone', Trigger.noOneNear, randomMusic)
+machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.silence))
+machineState.addTransition('engage', 'listen', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.talking))
+
+machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, randomMusic)
+machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, repeatEngage, Condition.heartbeatCountCondition(REPEAT_SPEECH_HEARTBEATS))
+machineState.addTransition('waitAnswer', 'listen', Trigger.talking, Action.doNothing)
+
+machineState.addTransition('listen', 'alone', Trigger.noOneNear, randomMusic)
+machineState.addTransition('listen', 'aphorism', Trigger.silence, playAphorism)
+
+machineState.addTransition('aphorism', 'alone', Trigger.endTransmit, randomMusic, Condition.proximityCondition(Trigger.noOneNear))
+machineState.addTransition('aphorism', 'notAlone', Trigger.endTransmit, engageSpeech, Condition.proximityCondition(Trigger.mayBeNear))
+machineState.addTransition('aphorism', 'engage', Trigger.endTransmit, engageSpeech, Condition.proximityCondition(Trigger.isNear))
+
+
+worldState = WorldState()
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)  # 1 sec timeout
+
+randomMusic(worldState)
+
+while True:
+    print machineState.state
+    sense = ser.readline().strip()
+    trigger = Trigger.fromString(sense)
+
+    machineState.run(trigger, worldState)
+
+    for event in pygame.event.get():
+        if event.type == SONG_END:
+            machineState.run(Trigger.endTransmit, worldState)
+```
+
+The states would represent:
+
+* Alone: Pythia is alone
+* Not Alone: someone may be near Pythia
+* Engage: Pythia is performing the opening speech
+* Wait answer: Pythia is waiting for some sound representing an answer to her speech
+* Listen: Pythia is listening to the answer
+* Aphorism: Pythia is reproducing a random aphorism
+
+The rest of the code may be found under [Action.py](Pythia/Action.py), [Trigger.py](Pythia/Trigger.py), [WorldState.py](Pythia/WorldState.py) and [Condition.py](Pythia/Condition.py).
+
+## What's next
+
+Following the software comes the hardware. Or the other way around depending on what you build first. Pythia still needs some physical shape. A crystal ball emitting LED lights is planned which brings up the following considerations:
+
+* Should the LEDs be connected to the Arduino board or the Raspberry?
+* How do we place the sensors, which are connected to the Arduino, outside the ball but keep the LEDs inside? Note also that the Raspberry and the Arduino must be connected.
+* A bluetooth MP3 player may be connected to the Raspberry. Where should we place it? Preferrably only the crystal ball and *maybe* the sensor should be seen by the people interacting with Pythia.
+* A battery for the Raspberry and the Arduino should be attached. May be we can do with only a battery for the Raspberry.
+* Code for controlling the LEDs is still needed. Depends on where we place them.
+* Need access to the Raspberry, probably temporary or even before making the installation, in order to execute the Python Pythia.py script.
+
+## Credits
+
+Original Idea - Rodrigo Ramele
+
+Pythia's Voice - Lucila Castellano
+
 ## Contact
 
 Tomás Cerdá - <tcerda@itba.edu.ar>
