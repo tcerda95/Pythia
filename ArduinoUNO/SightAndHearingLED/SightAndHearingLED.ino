@@ -13,16 +13,15 @@ const int PINGS = 15;
 const int TALKING_SENSOR_PIN = 4;
 const int TALK_THRESHOLD = 2500;
 
+const int FIRST_LED = 5;
+const int LAST_LED = 13;
+
 elapsedMillis someoneNearTime;
 NewPing sensor(TRIGGER, ECHO, MAX_DISTANCE);
 TalkingSensor talkingSensor(TALKING_SENSOR_PIN, TALK_THRESHOLD);
 
-const int leds[] = {RED, YELLOW, GREEN};
-const int nLeds = sizeof(leds)/sizeof(leds[0]);
-
 typedef struct proximity {
   char * stateName;
-  int led;
   struct proximity (*callback) (int);
 } Proximity;
 
@@ -32,19 +31,16 @@ Proximity isNearCallback(int distance);
 
 const Proximity noOneNear = {
   "noOneNear",
-  RED,
   noOneNearCallback
 };
 
 const Proximity mayBeNear = {
   "mayBeNear",
-  YELLOW,
   mayBeNearCallback
 };
 
 const Proximity isNear = {
   "isNear",
-  GREEN,
   isNearCallback
 };
 
@@ -55,13 +51,12 @@ void setup() {
   int i;
   Serial.begin(9600);
 
-  for (i = 0; i < nLeds; i++) {
-    pinMode(leds[i], OUTPUT);
-    digitalWrite(leds[i], LOW);
+  for (i = FIRST_LED; i <= LAST_LED; i++) {
+    pinMode(i, OUTPUT);
+    digitalWrite(i, LOW);
   }
 
   proximity = noOneNear;
-  digitalWrite(proximity.led, HIGH);
   Serial.println(proximity.stateName);
 
   isSomeoneTalking = false;
@@ -70,17 +65,19 @@ void setup() {
 
 void loop() {
   int distance = sensor.convert_cm(sensor.ping_median(PINGS));
-  int prevLed = proximity.led;
+  char * prevState = proximity.stateName;
   bool prevTalking = isSomeoneTalking;
   
   proximity = proximity.callback(distance);
   isSomeoneTalking = talkingSensor.isTalking();
 
-  if (prevLed != proximity.led) {
-    Serial.println(proximity.stateName);
-    digitalWrite(prevLed, LOW);
-    digitalWrite(proximity.led, HIGH);
+  if (Serial.available()) {
+    turnOffLeds();
+    turnOnSerialLeds();    
   }
+
+  if (prevState != proximity.stateName)
+    Serial.println(proximity.stateName);
 
   if (prevTalking != isSomeoneTalking && isSomeoneTalking)
     Serial.println("talking");
@@ -113,6 +110,19 @@ Proximity isNearCallback(int distance) {
     return isNear;
   else
     return noOneNear;
+}
+
+void turnOffLeds() {
+  for (int i = FIRST_LED; i <= LAST_LED; i++)
+    digitalWrite(i, LOW);  
+}
+
+void turnOnSerialLeds() {
+  while (Serial.available()) {
+    byte led = Serial.read();
+    digitalWrite(led, HIGH);
+    delay(2);
+  }
 }
 
 boolean hasBeenNearEnough() {

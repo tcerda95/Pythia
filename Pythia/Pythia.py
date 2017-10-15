@@ -1,11 +1,11 @@
 import serial
-import random
 import pygame
 import os
 from pygame import mixer
 from Trigger import Trigger
 from WorldState import WorldState
 from MachineState import MachineState
+from LED import LEDLighter
 import Action
 import Condition
 
@@ -22,10 +22,21 @@ mixer.music.set_endevent(SONG_END)
 def soundFiles(directory):
     names = []
     for filename in os.listdir(directory):
-        if '.mp3'in filename or '.wav' in filename:
+        if '.mp3' in filename or '.wav' in filename:
             names.append(directory + '/' + filename)
     print names
     return names
+
+
+ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout=1)  # 1 sec timeout
+
+
+ledLighter = LEDLighter(ser)
+ledLighter.addLedGroup('white', 5)
+ledLighter.addLedGroup('blue', 6, 7)
+ledLighter.addLedGroup('green', 8, 9)
+ledLighter.addLedGroup('yellow', 10, 11)
+ledLighter.addLedGroup('red', 12, 13)
 
 machineState = MachineState('alone')
 
@@ -33,33 +44,41 @@ engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeeches'))
 repeatEngage = Action.playRandomSpeech(soundFiles('repeatEngage'))
 playAphorism = Action.playRandomSpeech(soundFiles('aphorisms'))
 randomMusic = Action.playRandomMusic(soundFiles('music'))
+lightRandomLeds = Action.lightRandomLeds(ledLighter)
+pythiaTalkingLeds = Action.lightLeds(ledLighter, 'blue', 'green', 'white')
+waitAnswerLeds = Action.lightLeds(ledLighter, 'blue')
+listenLeds = Action.lightLeds(ledLighter, 'green', 'white')
+attentionLeds = Action.lightLeds(ledLighter, 'red', 'yellow')
 
-machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.lowerVolume)
+standbyAction = Action.chain([lightRandomLeds, randomMusic])
+
+
+machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.chain([Action.lowerVolume, attentionLeds]))
 machineState.addTransition('alone', 'alone', Trigger.endTransmit, randomMusic)
+machineState.addTransition('alone', 'alone', Trigger.heartbeat, lightRandomLeds)
 
-machineState.addTransition('notAlone', 'alone', Trigger.noOneNear, Action.higherVolume)
-machineState.addTransition('notAlone', 'engage', Trigger.isNear, Action.chain([Action.higherVolume, engageSpeech]))
+machineState.addTransition('notAlone', 'alone', Trigger.noOneNear, Action.chain([Action.higherVolume, lightRandomLeds]))
+machineState.addTransition('notAlone', 'engage', Trigger.isNear, Action.chain([Action.higherVolume, engageSpeech, pythiaTalkingLeds]))
 
-machineState.addTransition('engage', 'alone', Trigger.noOneNear, randomMusic)  # TODO: disappointed speech
-machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.silence))
-machineState.addTransition('engage', 'listen', Trigger.endTransmit, Action.doNothing, Condition.soundCondition(Trigger.talking))
+machineState.addTransition('engage', 'alone', Trigger.noOneNear, standbyAction)  # TODO: disappointed speech
+machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, waitAnswerLeds, Condition.soundCondition(Trigger.silence))
+machineState.addTransition('engage', 'listen', Trigger.endTransmit, listenLeds, Condition.soundCondition(Trigger.talking))
 
-machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, randomMusic)   # TODO: disappointed speech
-machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, repeatEngage, Condition.heartbeatCountCondition(REPEAT_SPEECH_HEARTBEATS))
-machineState.addTransition('waitAnswer', 'listen', Trigger.talking, Action.doNothing)
+machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, standbyAction)  # TODO: disappointed speech
+machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, Action.chain([repeatEngage, pythiaTalkingLeds]), Condition.heartbeatCountCondition(REPEAT_SPEECH_HEARTBEATS))
+machineState.addTransition('waitAnswer', 'listen', Trigger.talking, listenLeds)
 
-machineState.addTransition('listen', 'alone', Trigger.noOneNear, randomMusic)  # TODO: disappointed speech
-machineState.addTransition('listen', 'aphorism', Trigger.silence, playAphorism)
+machineState.addTransition('listen', 'alone', Trigger.noOneNear, standbyAction)  # TODO: disappointed speech
+machineState.addTransition('listen', 'aphorism', Trigger.silence, Action.chain([playAphorism, pythiaTalkingLeds]))
 
-machineState.addTransition('aphorism', 'alone', Trigger.endTransmit, randomMusic, Condition.proximityCondition(Trigger.noOneNear))
-machineState.addTransition('aphorism', 'notAlone', Trigger.endTransmit, engageSpeech, Condition.proximityCondition(Trigger.mayBeNear))
-machineState.addTransition('aphorism', 'engage', Trigger.endTransmit, engageSpeech, Condition.proximityCondition(Trigger.isNear))
+machineState.addTransition('aphorism', 'alone', Trigger.endTransmit, standbyAction, Condition.proximityCondition(Trigger.noOneNear))
+machineState.addTransition('aphorism', 'notAlone', Trigger.endTransmit, attentionLeds, Condition.proximityCondition(Trigger.mayBeNear))
+machineState.addTransition('aphorism', 'engage', Trigger.endTransmit, Action.chain([engageSpeech, pythiaTalkingLeds]), Condition.proximityCondition(Trigger.isNear))
 
 
 worldState = WorldState()
-ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout=1)  # 1 sec timeout
 
-randomMusic(worldState)
+standbyAction(worldState)
 
 while True:
     print machineState.state

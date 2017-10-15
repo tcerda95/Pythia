@@ -39,5 +39,18 @@ def playRandomSpeech(speeches):
         mixer.music.play()
     return playSpeechFunction
 
+
+def lightLeds(ledLighter, *groups):
+    def lightLedsFunction(worldState):
+        ledLighter.lightLedGroups(*groups)
+    return lightLedsFunction
+
+
+def lightRandomLeds(ledLighter):
+    def lightRandomLedsFunction(worldState):
+        ledLighter.lightRandomLeds()
+    return lightRandomLedsFunction
+
+
 def doNothing(worldState):
     pass
