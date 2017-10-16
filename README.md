@@ -2,6 +2,57 @@
 
 Named after the Oracles of Delphi, Pythia is a testbed with the objetive of testing human recognition along with natural language processing. It detects someone's presence, intriguing about his/her troubles and providing an aphorism as a solution.
 
+# Table of Contents
+
+* [Hardware](#hardware)
+* [Getting to know the LilyPad MP3 Player](#getting-to-know-the-lilypad-mp3-player)
+   * [Prerequisites](#prerequisites)
+   * [IDE Configuration](#ide-configuration)
+   * [Basic Arduino Concepts](#basic-arduino-concepts)
+      * [loop() and setup()](#loop-and-setup)
+      * [Pins](#pins)
+      * [Serial](#serial)
+   * [Trigger Sketch](#trigger-sketch)
+      * [Code Explanation](#code-explanation)
+      * [setup()](#setup)
+      * [loop()](#loop)
+   * [Player Sketch](#player-sketch)
+   * [Version 1.0](#version-10)
+      * [Code Explanation](#code-explanation-1)
+   * [Version 2.0](#version-20)
+      * [Code Explanation](#code-explanation-2)
+   * [Final Version](#final-version)
+      * [Code Explanation](#code-explanation-3)
+      * [Final notes](#final-notes)
+   * [Enhancing the Player Sketch with LED](#enhancing-the-player-sketch-with-led)
+      * [Code Explanation](#code-explanation-4)
+      * [Board Schematic](#board-schematic)
+* [Managing Sensors with Arduino UNO](#managing-sensors-with-arduino-uno)
+   * [IDE Configuration](#ide-configuration-1)
+   * [A Sight to See](#a-sight-to-see)
+   * [Proximity Sketch](#proximity-sketch)
+      * [Code Explanation](#code-explanation-5)
+      * [Board Schematic](#board-schematic-1)
+   * [Developing Hearing](#developing-hearing)
+   * [TalkingSensor Library](#talkingsensor-library)
+      * [Library Code](#library-code)
+   * [Sight and Hearing Combined](#sight-and-hearing-combined)
+      * [Code Explanation](#code-explanation-6)
+* [Raspberry PI](#raspberry-pi)
+   * [Proximity Script](#proximity-script)
+      * [Code Explanation](#code-explanation-7)
+* [Goal](#goal)
+   * [Transition](#transition)
+   * [World State](#world-state)
+   * [Trigger](#trigger)
+   * [Action](#action)
+   * [Condition](#condition)
+   * [Machine State implementation](#machine-state-implementation)
+   * [Pythia States](#pythia-states)
+* [What's next](#whats-next)
+* [Credits](#credits)
+* [Contact](#contact)
+
 ## Hardware
 
 * [LilyPad MP3 Player](https://www.sparkfun.com/products/11013)
@@ -685,7 +736,7 @@ We have developed sight and hearing senses for Pythia. It's time to bring those 
 
 The code may be found under [SightAndHearing.ino](ArduinoUNO/SightAndHearing/SightAndHearing.ino). As expected, is very similar to the last two codes we have seen.
 
-### Code Explanation
+#### Code Explanation
 
 Only the `setup()` and `loop()` functions are presented; the rest of the code is very similar to [Proximity.ino](ArduinoUNO/Proximity/Proximity.ino):
 
@@ -768,7 +819,7 @@ This script processes the signals read by the Arduino through the USB serial and
 
 Notice that the readings correspond to the same strings printed to the Serial in the last Arduino sketch. The code may be found under [Proximity.py](Pythia/playground/Proximity.py). As always, it is strongly recommended to read it first and then go through the following explanation.
 
-### Code Explanation
+#### Code Explanation
 
 First of all we setup the [mixer](https://www.pygame.org/docs/ref/mixer.html), an object from the `pygame` library capable of reproducing song and sounds. Afterwards, the `Serial` is initialized with the corresponding serial port (usually */dev/ttyACM0*) and the baud rate, which must be the same as the Arduino serial. We could've specificied a timeout, otherwise the `serial.readline()` blocks until a newline is read. For this script a timeout won't be needed. A short introduction to the serial setup and uses may be found [here](https://pythonhosted.org/pyserial/shortintro.html).
 
