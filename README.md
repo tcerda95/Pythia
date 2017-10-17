@@ -49,7 +49,7 @@ Named after the Oracles of Delphi, Pythia is a testbed with the objetive of test
    * [Condition](#condition)
    * [Machine State implementation](#machine-state-implementation)
    * [Pythia States](#pythia-states)
-* [What's next](#whats-next)
+* [LEDs Disposition](#leds-disposition)
 * [Credits](#credits)
 * [Contact](#contact)
 
@@ -869,7 +869,7 @@ As you may have been, it is very simple to communicate with the Arduino board th
 
 ## Goal
 
-Currently, the goal is that Pythia should recognize that someone is *near* her and *engage* in a conversation with that someone. This conversation would consist of the following flow:
+Currently, the goal is that Pythia should recognize that someone is *near* her and *engage* in a conversation with that someone, all while lighting LEDs up which are contained inside a crystal ball. The conversation would consist of the following flow:
 
 * Pythia says an *opening speech*, inviting the other person to a conversation
 * Pythia *waits* and *listens* for an answer
@@ -990,16 +990,26 @@ The states would represent:
 
 The rest of the code may be found under [Action.py](Pythia/Action.py), [Trigger.py](Pythia/Trigger.py), [WorldState.py](Pythia/WorldState.py) and [Condition.py](Pythia/Condition.py).
 
-## What's next
+## LEDs Disposition
 
-Following the software comes the hardware. Or the other way around depending on what you build first. Pythia still needs some physical shape. A crystal ball emitting LED lights is planned which brings up the following considerations:
+Since it is preferred that low level hardware control is managed by the Arduino while the high level processing is done by the Raspberry, it is only natural to connect the LEDs to the Arduino's pins. The catch is that the Arduino has no idea which LEDs it should light and when; state information and consequent excecution of *Actions* are managed by the Raspberry.
 
-* Should the LEDs be connected to the Arduino board or the Raspberry?
-* How do we place the sensors, which are connected to the Arduino, outside the ball but keep the LEDs inside? Note also that the Raspberry and the Arduino must be connected.
-* A bluetooth MP3 player may be connected to the Raspberry. Where should we place it? Preferrably only the crystal ball and *maybe* the sensor should be seen by the people interacting with Pythia.
-* A battery for the Raspberry and the Arduino should be attached. May be we can do with only a battery for the Raspberry.
-* Code for controlling the LEDs is still needed. Depends on where we place them.
-* Need access to the Raspberry, probably temporary or even before making the installation, in order to execute the Python Pythia.py script.
+Therefore, the Raspberry should communicate to the Arduino which LEDs to light and when. The Arduino should have no knowledge about which state Pythia is currently in nor which combination of LEDs represent any of Pythia's states. This way, the Arduino is decoupled from any high level information. Remember that the medium of communication of these devices is the [Serial](https://www.arduino.cc/en/Reference/Serial).
+
+One possible way of achieving this is the following:
+
+* From the Raspberry:
+  * Setup the pins corresponding to the LEDs in groups. For examaple, the *red* group could correspond to pins 12 and 13
+  * Associate *Actions* to lighting up certaint LED groups. For example, the *Action* which transitions to the Pythia listening state could light up the *green* and *white* LED groups
+  * Pack the pin numbers making use of the Python [struct](https://docs.python.org/2/library/struct.html) library and send them to the Arduino through the `Serial`. Note they should be packed as `unsigned char`, making use of the `B` format.
+
+* From the Arduino:
+  * Setup the LEDs pin mode as `OUTPUT`
+  * Check if there is anything available to read from the `Serial` making use of [Serial.available()](https://www.arduino.cc/en/Serial/Available)
+  * If there is, turn off every LED
+  * Finally, read byte by byte (each byte corresponds to a pin number) with [Serial.read()](https://www.arduino.cc/en/Serial/Read) and turn on the corresponding LEDs
+
+The code for the Raspberry implementation may be found in the `LEDLighter` class inside [LED.py](Pythia/LED.py) while the Arduino implementation may be found in [SightAndHearingLED.ino](ArduinoUNO/SightAndHearingLED/SightAndHearingLED.ino). Attention should be payed to the `turnOffLeds()` and `turnOnSerialLeds()` functions.
 
 ## Credits
 
