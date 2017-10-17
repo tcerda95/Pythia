@@ -981,12 +981,12 @@ while True:
 
 The states would represent:
 
-* Alone: Pythia is alone
-* Not Alone: someone may be near Pythia
-* Engage: Pythia is performing the opening speech
-* Wait answer: Pythia is waiting for some sound representing an answer to her speech
-* Listen: Pythia is listening to the answer
-* Aphorism: Pythia is reproducing a random aphorism
+* **Alone**: Pythia is alone
+* **Not Alone**: someone may be near Pythia
+* **Engage**: Pythia is performing the opening speech
+* **Wait answer**: Pythia is waiting for some sound representing an answer to her speech
+* **Listen**: Pythia is listening to the answer
+* **Aphorism**: Pythia is reproducing a random aphorism
 
 The rest of the code may be found under [Action.py](Pythia/Action.py), [Trigger.py](Pythia/Trigger.py), [WorldState.py](Pythia/WorldState.py) and [Condition.py](Pythia/Condition.py).
 
