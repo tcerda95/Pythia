@@ -50,6 +50,7 @@ Named after the Oracles of Delphi, Pythia is a testbed with the objetive of test
    * [Machine State implementation](#machine-state-implementation)
    * [Pythia States](#pythia-states)
 * [LEDs Disposition](#leds-disposition)
+   * [Usage](#usage)
 * [Credits](#credits)
 * [Contact](#contact)
 
@@ -1000,7 +1001,7 @@ One possible way of achieving this is the following:
 
 * From the Raspberry:
   * Setup the pins corresponding to the LEDs in groups. For examaple, the *red* group could correspond to pins 12 and 13
-  * Associate *Actions* to lighting up certaint LED groups. For example, the *Action* which transitions to the Pythia listening state could light up the *green* and *white* LED groups
+  * Associate *Actions* to lighting up certain LED groups. For example, the *Action* which transitions to the Pythia listening state could light up the *green* and *white* LED groups
   * Pack the pin numbers making use of the Python [struct](https://docs.python.org/2/library/struct.html) library and send them to the Arduino through the `Serial`. Note they should be packed as `unsigned char`, making use of the `B` format.
 
 * From the Arduino:
@@ -1010,6 +1011,66 @@ One possible way of achieving this is the following:
   * Finally, read byte by byte (each byte corresponds to a pin number) with [Serial.read()](https://www.arduino.cc/en/Serial/Read) and turn on the corresponding LEDs
 
 The code for the Raspberry implementation may be found in the `LEDLighter` class inside [LED.py](Pythia/LED.py) while the Arduino implementation may be found in [SightAndHearingLED.ino](ArduinoUNO/SightAndHearingLED/SightAndHearingLED.ino). Attention should be payed to the `turnOffLeds()` and `turnOnSerialLeds()` functions.
+
+### Usage
+
+An example of usage of `LEDLighter` may be found in [SerialLed.py](Pythia/playground/SerialLed.py). Basically we have to:
+
+Construct an instance of the class passing the corresponding `Serial` instance as a parameter:
+
+```Python
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+ledLighter = LEDLighter(ser)
+```
+
+Setup the LED groups with the corresponding pins:
+
+```Python
+ledLighter.addLedGroup('white', 5)
+ledLighter.addLedGroup('blue', 6, 7)
+ledLighter.addLedGroup('green', 8, 9)
+ledLighter.addLedGroup('yellow', 10, 11)
+ledLighter.addLedGroup('red', 12, 13)
+```
+
+Light up the desired LED groups, with the possibility of lighting up random LEDs or all LEDs:
+
+```Python
+ledLighter.lightRandomLeds(0.6)
+ledLighter.lightAllLeds()
+ledLighter.lightLedGroups('white')
+ledLighter.lightLedGroups('blue')
+ledLighter.lightLedGroups('red', 'yellow', 'green', 'white')
+```
+
+And that's it for the usage of the LEDLighter. 
+
+When it comes to associating the light methods to *Actions*, they should be wrapped inside a function which receives the *WorldState* as a parameter, since that's how an *Action* was defined:
+
+```Python
+def lightLeds(ledLighter, *groups):
+    def lightLedsFunction(worldState):
+        ledLighter.lightLedGroups(*groups)
+    return lightLedsFunction
+
+
+def lightRandomLeds(ledLighter):
+    def lightRandomLedsFunction(worldState):
+        ledLighter.lightRandomLeds()
+    return lightRandomLedsFunction
+```
+
+Finally, lighting up LEDs in a given transition is as follows:
+
+```Python
+pythiaTalkingLeds = Action.lightLeds(ledLighter, 'blue', 'green', 'white')
+listenLeds = Action.lightLeds(ledLighter, 'green', 'white')
+
+machineState.addTransition('waitAnswer', 'listen', Trigger.talking, listenLeds)
+machineState.addTransition('listen', 'aphorism', Trigger.silence, Action.chain([playAphorism, pythiaTalkingLeds]))
+```
+
+With all this, Pythia's initial scope of acting as an oracle who responds with aphorisms to the people's worries could be considered accomplished.
 
 ## Credits
 
