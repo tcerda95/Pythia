@@ -121,7 +121,7 @@ void turnOnSerialLeds() {
   while (Serial.available()) {
     byte led = Serial.read();
     digitalWrite(led, HIGH);
-    delay(2);
+    delay(2);  // wait a bit for the rest of the bytes to become available
   }
 }
 
