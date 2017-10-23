@@ -12,7 +12,7 @@ import Condition
 
 SONG_END = pygame.USEREVENT + 1
 MAX_TIMEOUTS = 1
-REPEAT_SPEECH_HEARTBEATS = 5  # repeats the engage speech after 5 heartbeats of waiting an answer
+REPEAT_SPEECH_HEARTBEATS = 10  # repeats the engage speech after given heartbeats of waiting an answer
 
 pygame.init()
 mixer.init()
@@ -22,7 +22,7 @@ mixer.music.set_endevent(SONG_END)
 def soundFiles(directory):
     names = []
     for filename in os.listdir(directory):
-        if '.mp3' in filename or '.wav' in filename:
+        if '.mp3' in filename or '.wav' in filename or '.ogg' in filename:
             names.append(directory + '/' + filename)
     print names
     return names
@@ -31,6 +31,7 @@ def soundFiles(directory):
 ser = serial.Serial('/dev/cu.usbmodem1411', 9600, timeout=1)  # 1 sec timeout
 
 
+# LED Setup
 ledLighter = LEDLighter(ser)
 ledLighter.addLedGroup('white', 5)
 ledLighter.addLedGroup('blue', 6, 7)
@@ -38,7 +39,8 @@ ledLighter.addLedGroup('green', 8, 9)
 ledLighter.addLedGroup('yellow', 10, 11)
 ledLighter.addLedGroup('red', 12, 13)
 
-machineState = MachineState('alone')
+
+# Actions setup
 
 engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeeches'))
 repeatEngage = Action.playRandomSpeech(soundFiles('repeatEngage'))
@@ -47,11 +49,14 @@ randomMusic = Action.playRandomMusic(soundFiles('music'))
 lightRandomLeds = Action.lightRandomLeds(ledLighter)
 pythiaTalkingLeds = Action.lightLeds(ledLighter, 'blue', 'green', 'white')
 waitAnswerLeds = Action.lightLeds(ledLighter, 'blue')
-listenLeds = Action.lightLeds(ledLighter, 'green', 'white')
+listenLeds = Action.lightLeds(ledLighter, 'green', 'blue')
 attentionLeds = Action.lightLeds(ledLighter, 'red', 'yellow')
 
 standbyAction = Action.chain([lightRandomLeds, randomMusic])
 
+# Machine State Setup
+
+machineState = MachineState('alone')
 
 machineState.addTransition('alone', 'notAlone', Trigger.mayBeNear, Action.chain([Action.lowerVolume, attentionLeds]))
 machineState.addTransition('alone', 'alone', Trigger.endTransmit, randomMusic)

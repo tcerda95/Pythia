@@ -1,7 +1,7 @@
 #include "TalkingSensor.h"
 
 /* How many times the pin would be read for sound signals */
-#define LISTEN_TRIES 20
+#define LISTEN_TRIES 13000
 
 TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
   pinMode(digitalPin, INPUT);
@@ -17,12 +17,14 @@ TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
  */
 bool TalkingSensor::isTalking() {
   int sound;
+  bool listened = false;
 
-  for (int i = 0; i < LISTEN_TRIES; i++) {
-      sound = digitalRead(_pin);
-      if (sound == HIGH)
-        _timeSinceLastSound = 0;
-      delay(1);
+  for (int i = 0; i < LISTEN_TRIES && !listened; i++) {
+    sound = digitalRead(_pin);
+    if (sound == HIGH) {
+      _timeSinceLastSound = 0;
+      listened = true;
+    }
   }
 
   return _timeSinceLastSound <= _talkingThreshold;

@@ -673,7 +673,7 @@ Note that we make use of the `elapsedMillis` library, therefore it is included i
 #include "TalkingSensor.h"
 
 /* How many times the pin would be read for sound signals */
-#define LISTEN_TRIES 20
+#define LISTEN_TRIES 13000
 
 TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
   pinMode(digitalPin, INPUT);
@@ -689,17 +689,18 @@ TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
  */
 bool TalkingSensor::isTalking() {
   int sound;
+  bool listened = false;
 
-  for (int i = 0; i < LISTEN_TRIES; i++) {
-      sound = digitalRead(_pin);
-      if (sound == HIGH)
-        _timeSinceLastSound = 0;
-      delay(1);
+  for (int i = 0; i < LISTEN_TRIES && !listened; i++) {
+    sound = digitalRead(_pin);
+    if (sound == HIGH) {
+      _timeSinceLastSound = 0;
+      listened = true;
+    }
   }
 
   return _timeSinceLastSound <= _talkingThreshold;
 }
-
 ```
 
 The code pretty much corresponds with the step-by-step earlier described. Note that we read the pin several times in order to extend the listen time window.
@@ -1064,7 +1065,7 @@ Finally, lighting up LEDs in a given transition is as follows:
 
 ```Python
 pythiaTalkingLeds = Action.lightLeds(ledLighter, 'blue', 'green', 'white')
-listenLeds = Action.lightLeds(ledLighter, 'green', 'white')
+listenLeds = Action.lightLeds(ledLighter, 'green', 'blue')
 
 machineState.addTransition('waitAnswer', 'listen', Trigger.talking, listenLeds)
 machineState.addTransition('listen', 'aphorism', Trigger.silence, Action.chain([playAphorism, pythiaTalkingLeds]))
