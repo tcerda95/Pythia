@@ -15,7 +15,8 @@ def playRandomMusic(music):
         random.shuffle(music)
 
         if not mixer.music.get_busy():  # play if not already playing
-            mixer.music.load(music[0])
+            select = random.randint(0, len(music) - 1)
+            mixer.music.load(music[select])
             mixer.music.play()
 
         for m in music:

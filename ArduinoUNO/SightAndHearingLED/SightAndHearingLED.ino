@@ -11,7 +11,7 @@ const int TRIGGER = 2;
 const int ECHO = 3;
 const int PINGS = 15;
 const int TALKING_SENSOR_PIN = 4;
-const int TALK_THRESHOLD = 3500;
+const int TALK_THRESHOLD = 2750;
 
 const int FIRST_LED = 5;
 const int LAST_LED = 13;

@@ -1,7 +1,7 @@
 #include "TalkingSensor.h"
 
 /* How many times the pin would be read for sound signals */
-#define LISTEN_TRIES 13000
+#define LISTEN_TRIES 20000
 
 TalkingSensor::TalkingSensor(int digitalPin, int talkingThreshold) {
   pinMode(digitalPin, INPUT);
