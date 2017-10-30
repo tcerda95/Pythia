@@ -33,6 +33,17 @@ def higherVolume(worldState):
     mixer.music.set_volume(1)
 
 
+def incrementAphorismCount(worldState):
+    worldState.aphorismPlayed()
+
+
+def resetAphorismCount(worldState):
+    worldState.resetAphorismCount()
+
+
+def stopPlaying(worldState):
+    mixer.music.stop()
+
 def playRandomSpeech(speeches):
     def playSpeechFunction(worldState):
         select = random.randint(0, len(speeches) - 1)

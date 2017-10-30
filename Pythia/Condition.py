@@ -4,6 +4,13 @@ def trueCondition(worldState):
     return True
 
 
+def negateCondition(condition):
+    """Given a condition, returns a condition which is true when the given condition is false and false otherwise"""
+    def negateConditionFunction(worldState):
+        return not condition(worldState)
+    return negateConditionFunction
+
+
 def anyCondition(conditions):
     """Given a list of conditions it returns a condition which is true when any of the given conditions are true"""
     def anyConditionFunction(worldState):
@@ -22,6 +29,14 @@ def allCondition(conditions):
                 return False
         return True
     return allConditionFunction
+
+
+def aphorismPlayedCondition(worldState):
+    return worldState.aphorismCount > 0
+
+
+def noAphorismPlayedCondition(worldState):
+    return worldState.aphorismCount == 0
 
 
 def soundCondition(soundState):

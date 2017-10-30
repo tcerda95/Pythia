@@ -43,10 +43,11 @@ ledLighter.addLedGroup('red', 12, 13)
 
 # Actions setup
 
-engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeeches'))
+engageSpeech = Action.playRandomSpeech(soundFiles('engageSpeech'))
 angrySpeech = Action.playRandomSpeech(soundFiles('offendedSpeech'))
+thankSpeech = Action.playRandomSpeech(soundFiles('thankSpeech'))
 repeatEngage = Action.playRandomSpeech(soundFiles('repeatEngage'))
-playAphorism = Action.playRandomSpeech(soundFiles('aphorisms'))
+playAphorism = Action.chain([Action.playRandomSpeech(soundFiles('aphorisms')), Action.incrementAphorismCount])
 randomMusic = Action.playRandomMusic(soundFiles('music'))
 
 lightRandomLeds = Action.lightRandomLeds(ledLighter)
@@ -56,8 +57,9 @@ listenLeds = Action.lightLeds(ledLighter, 'green', 'blue')
 attentionLeds = Action.lightLeds(ledLighter, 'red', 'yellow')
 offendedLeds = Action.lightLeds(ledLighter, 'red')
 
-offendedAction = Action.chain([offendedLeds, angrySpeech, randomMusic])
-standbyAction = Action.chain([lightRandomLeds, randomMusic])
+offendedAction = Action.chain([offendedLeds, angrySpeech, randomMusic, Action.resetAphorismCount])
+standbyAction = Action.chain([lightRandomLeds, randomMusic, Action.resetAphorismCount])
+thankfulAction = Action.chain([pythiaTalkingLeds, thankSpeech, randomMusic, Action.resetAphorismCount])
 engageAction = Action.chain([pythiaTalkingLeds, engageSpeech])
 
 # Machine State Setup
@@ -71,21 +73,27 @@ machineState.addTransition('alone', 'alone', Trigger.heartbeat, lightRandomLeds)
 machineState.addTransition('notAlone', 'alone', Trigger.noOneNear, Action.chain([Action.higherVolume, standbyAction]))
 machineState.addTransition('notAlone', 'engage', Trigger.isNear, Action.chain([Action.higherVolume, engageAction]))
 
-machineState.addTransition('engage', 'alone', Trigger.noOneNear, offendedAction)
+machineState.addTransition('engage', 'alone', Trigger.noOneNear, offendedAction, Condition.noAphorismPlayedCondition)
+machineState.addTransition('engage', 'thanking', Trigger.noOneNear, thankfulAction, Condition.aphorismPlayedCondition)
 machineState.addTransition('engage', 'waitAnswer', Trigger.endTransmit, waitAnswerLeds, Condition.soundCondition(Trigger.silence))
 machineState.addTransition('engage', 'listen', Trigger.endTransmit, listenLeds, Condition.soundCondition(Trigger.talking))
 
-machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, offendedAction)
+machineState.addTransition('waitAnswer', 'alone', Trigger.noOneNear, offendedAction, Condition.noAphorismPlayedCondition)
+machineState.addTransition('waitAnswer', 'thanking', Trigger.noOneNear, thankfulAction, Condition.aphorismPlayedCondition)
 machineState.addTransition('waitAnswer', 'engage', Trigger.heartbeat, Action.chain([repeatEngage, pythiaTalkingLeds]), Condition.heartbeatCountCondition(REPEAT_SPEECH_HEARTBEATS))
 machineState.addTransition('waitAnswer', 'listen', Trigger.talking, listenLeds)
 
-machineState.addTransition('listen', 'alone', Trigger.noOneNear, offendedAction)
+machineState.addTransition('listen', 'alone', Trigger.noOneNear, offendedAction, Condition.noAphorismPlayedCondition)
+machineState.addTransition('listen', 'thanking', Trigger.noOneNear, thankfulAction, Condition.aphorismPlayedCondition)
 machineState.addTransition('listen', 'aphorism', Trigger.silence, Action.chain([playAphorism, pythiaTalkingLeds]))
 
-machineState.addTransition('aphorism', 'alone', Trigger.endTransmit, standbyAction, Condition.proximityCondition(Trigger.noOneNear))
+machineState.addTransition('aphorism', 'thanking', Trigger.endTransmit, thankfulAction, Condition.proximityCondition(Trigger.noOneNear))
 machineState.addTransition('aphorism', 'notAlone', Trigger.endTransmit, attentionLeds, Condition.proximityCondition(Trigger.mayBeNear))
 machineState.addTransition('aphorism', 'engage', Trigger.endTransmit, engageAction, Condition.proximityCondition(Trigger.isNear))
 
+machineState.addTransition('thanking', 'alone', Trigger.endTransmit, standbyAction, Condition.proximityCondition(Trigger.noOneNear))
+machineState.addTransition('thanking', 'notAlone', Trigger.endTransmit, attentionLeds, Condition.proximityCondition(Trigger.mayBeNear))
+machineState.addTransition('thanking', 'engage', Trigger.endTransmit, engageAction, Condition.proximityCondition(Trigger.isNear))
 
 worldState = WorldState()
 
